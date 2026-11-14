@@ -1,6 +1,6 @@
 # CLAUDE.md · Reglas del proyecto SALUS
 
-SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura, 09 decisiones técnicas, 10 entornos). Consúltalos antes de implementar algo del negocio.
+SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura, 09 decisiones técnicas, 10 entornos, 11 pruebas en vista). Consúltalos antes de implementar algo del negocio.
 
 **`docs/09-decisiones-tecnicas.md` es la fuente de verdad técnica**: léelo antes de diseñar o escribir código. No contradigas ni reinventes lo que ahí está decidido; si algo debe cambiar, propónlo al usuario. Cada decisión nueva que se valide se agrega ahí.
 
@@ -9,7 +9,7 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 2. **Máquina nueva o recién clonada**: `bash scripts/preparar.sh` (crea `.env`, `.env.produccion` y certificados de prueba solo si faltan; instala dependencias del front). Requisitos: Git, Go 1.27+, Node 24+ con pnpm 12, Docker Desktop encendido.
 3. **Levantar el entorno de trabajo** (siempre pruebas): `bash scripts/entorno.sh pruebas up`. Comprobar con `bash scripts/entorno.sh pruebas probar`.
 4. **Desarrollar**: front con recarga en `cd frontend && pnpm dev` (http://localhost:3000, usa el backend de pruebas en :8080). Backend: editar y volver a correr `entorno.sh pruebas up` (recompila la imagen), o `docker compose stop backend` + `cd backend && go run ./cmd/api`.
-5. **Antes de dar un paso por terminado**: `go vet ./... && go test ./...`, `pnpm lint && pnpm build`, `entorno.sh pruebas probar` y, si se tocó seguridad, `bash scripts/prueba-seguridad.sh` (~5 min). Commit y push.
+5. **Antes de dar un paso por terminado**: matriz de pruebas en vista del paso (`docs/11`, escrita antes de construir) recorrida en el navegador con `qa-admin` (`bash scripts/usuarios-prueba.sh qa`; `usuarios-prueba.sh admin` restablece al admin), `go vet ./... && go test ./...`, `pnpm lint && pnpm build`, `entorno.sh pruebas probar` y, si se tocó seguridad, `bash scripts/prueba-seguridad.sh` (~5 min). Commit y push.
 6. **Producción solo cuando el usuario lo pida**: `entorno.sh produccion respaldar` → `entorno.sh produccion up` → `entorno.sh produccion probar`. Nunca se desarrolla ni se prueba en producción.
 7. **Al cerrar la sesión**: `entorno.sh pruebas down` (y `produccion down` si se levantó), detener `pnpm dev`, commit y push.
 

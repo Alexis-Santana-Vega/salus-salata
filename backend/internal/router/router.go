@@ -26,6 +26,7 @@ type Deps struct {
 
 	Procedimientos *service.Procedimientos
 	Tecnicos       *service.Tecnicos
+	Doctores       *service.Doctores
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -59,6 +60,7 @@ func Setup(app *fiber.App, d Deps) {
 	admin := []any{sesion, middleware.RequireRole(model.RolSysadmin, model.RolAdmin)}
 	crud(v1, "/procedimientos", admin, handler.ProcedimientosHandler{Svc: d.Procedimientos})
 	crud(v1, "/tecnicos", admin, handler.TecnicosHandler{Svc: d.Tecnicos})
+	crud(v1, "/doctores", admin, handler.DoctoresHandler{Svc: d.Doctores})
 
 	// Cualquier otra ruta responde 404 con el formato único.
 	app.Use(func(c fiber.Ctx) error {

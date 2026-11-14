@@ -22,6 +22,12 @@ cod() { curl -s -o "$T/r" -w '%{http_code}' "$@"; }
 # El curl de Windows altera los acentos en la línea de comandos: los cuerpos
 # con texto en español se mandan desde archivo (@archivo).
 cuerpo() { printf "%s" "$1" > "$T/b.json"; echo "@$T/b.json"; }
+# La API limita 30 escrituras/min por IP. Entre bloques se reinicia el backend
+# (el contador vive en memoria) para que un bloque no consuma el cupo del otro.
+reiniciar_limites() {
+  docker compose restart backend >/dev/null 2>&1
+  until [ "$(curl -s -o /dev/null -w '%{http_code}' $B/api/v1/health)" = 200 ]; do sleep 1; done
+}
 sql() { docker compose exec -T db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
 
 echo "Frontend (nginx)"
@@ -52,6 +58,12 @@ probar "cambio de contraseña → 200" 200 "$(curl -s -c $T/c -o $T/r -w '%{http
 A=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "Sysadmin entra a /usuarios" 200 "$(cod -H "Authorization: Bearer $A" $F/api/v1/usuarios)"
 
+# Parte de catálogos vacíos: lo que se probó a mano en la vista no interfiere.
+printf 'DELETE FROM DOCTOR;
+DELETE FROM TECNICO;
+DELETE FROM PROCEDIMIENTO;
+COMMIT;
+' | sql
 echo "Catálogo de procedimientos (patrón CRUD)"
 AU="Authorization: Bearer $A"
 P=$F/api/v1/procedimientos
@@ -75,6 +87,7 @@ probar "dado de baja sigue en la base (historial)" 1 "$(echo "SELECT COUNT(*) FR
 probar "el nombre de uno dado de baja se puede reusar → 201" 201 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo '{"nombre":"Cirugía General y Laparoscopía"}')" $P)"
 probar "sin sesión → 401" 401 "$(cod $P)"
 
+reiniciar_limites
 echo "Catálogo de técnicos"
 TC=$F/api/v1/tecnicos
 probar "alta con puesto y teléfono → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Rodrigo","puesto":"AYUDANTE","telefono":"+52 477 123 4567"}' $TC)"
@@ -90,6 +103,24 @@ probar "edición quita el teléfono → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" 
 probar "el teléfono vacío queda vacío" 1 "$(grep -c '"telefono":""' $T/r)"
 probar "baja lógica → 204" 204 "$(cod -X DELETE -H "$AU" $TC/$TID)"
 probar "dado de baja → 404" 404 "$(cod -H "$AU" $TC/$TID)"
+reiniciar_limites
+echo "Catálogo de doctores"
+DC=$F/api/v1/doctores
+probar "alta mínima (nombre + correo) → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dr. Aguayo","correo":"Aguayo@Mail.com"}' $DC)"
+DID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
+probar "correo se guarda en minúsculas" 1 "$(grep -c '"correo":"aguayo@mail.com"' $T/r)"
+probar "alta completa con dirección → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"numero":"doc-001","nombre":"Dr. Westendarp","correo":"west@mail.com","telPersonal":"477 111 2222","direccion":{"calle":"Av. Morelos","numExterior":"434","colonia":"Centro","cp":"37000","municipio":"León","estado":"GTO"}}' $DC)"
+probar "número en mayúsculas" 1 "$(grep -c '"numero":"DOC-001"' $T/r)"
+probar "número repetido → 409 en numero" 1 "$(cod -H "$AU" -H "$J" -d '{"numero":"DOC-001","nombre":"X","correo":"x@mail.com"}' $DC >/dev/null; grep -c '"field":"numero"' $T/r)"
+probar "correo repetido con mayúsculas → 409 en correo" 1 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"AGUAYO@mail.com"}' $DC >/dev/null; grep -c '"field":"correo"' $T/r)"
+probar "estado fuera de la lista → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"y@mail.com","direccion":{"estado":"XX"}}' $DC)"
+probar "C.P. inválido → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"y@mail.com","direccion":{"cp":"1.234"}}' $DC)"
+probar "correo inválido → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"no-es-correo"}' $DC)"
+probar "búsqueda por correo → 1" 1 "$(cod -H "$AU" "$DC?q=west@" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
+probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $DC/$DID)"
+probar "correo de uno dado de baja se reusa → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dr. Aguayo 2","correo":"aguayo@mail.com"}' $DC)"
+
+reiniciar_limites
 DPASS="Doctor-Integracion-2026"
 DHASH=$(printf '%s\n' "$DPASS" | (cd backend && PATH="$PATH:/c/Program Files/Go/bin" go run ./cmd/hash))
 printf "INSERT INTO USUARIO (ID, USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO, DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN) VALUES (GEN_UUID(), 'doctor-prueba', 'doctor-prueba@salus.local', 'Doctor Prueba', '%s', (SELECT ID FROM ROL WHERE CLAVE = 'DOCTOR'), TRUE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nCOMMIT;\n" "$DHASH" | sql
@@ -97,13 +128,14 @@ cod -H "$J" -d "{\"usuario\":\"doctor-prueba\",\"contrasena\":\"$DPASS\"}" $F/ap
 AD=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "rol Doctor no ve el catálogo → 403" 403 "$(cod -H "Authorization: Bearer $AD" $P)"
 probar "rol Doctor no ve los técnicos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $TC)"
+probar "rol Doctor no ve el catálogo de doctores → 403" 403 "$(cod -H "Authorization: Bearer $AD" $DC)"
 probar "ruta inexistente de la API sigue en 404" 404 "$(cod -H "$AU" $F/api/v1/no-existe)"
 probar "refresh con la cookie (recarga de página)" 200 "$(curl -s -b $T/c -c $T/c -o $T/r -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 probar "logout → 204" 204 "$(curl -s -b $T/c -c $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/logout)"
 probar "refresh tras logout → 401" 401 "$(curl -s -b $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 
 echo "Limpieza"
-printf 'DELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
+printf 'DELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
 docker compose restart backend >/dev/null 2>&1
 rm -rf "$T"
 echo

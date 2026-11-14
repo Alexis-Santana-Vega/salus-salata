@@ -49,6 +49,7 @@ var nombreCampoUnico = map[string]string{
 	"numero":       "este número",
 	"codigoBarras": "este código de barras",
 	"numSerie":     "este número de serie",
+	"correo":       "este correo",
 }
 
 // errorCatalogo traduce los errores del repositorio al formato de la API.

@@ -5,19 +5,25 @@ import (
 	"errors"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 
+	"salus/backend/internal/model"
 	"salus/backend/internal/response"
 )
 
-// validate es seguro para uso concurrente y cachea las reglas de cada struct.
 // Teléfono: + opcional y de 7 a 20 caracteres entre dígitos, espacios, guiones y paréntesis.
-var reTelefono = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
+// Código postal: exactamente 5 dígitos.
+var (
+	reTelefono = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
+	reCP       = regexp.MustCompile(`^[0-9]{5}$`)
+)
 
+// validate es seguro para uso concurrente y cachea las reglas de cada struct.
 var validate = func() *validator.Validate {
 	v := validator.New(validator.WithRequiredStructEnabled())
 	// Los errores usan el nombre del campo JSON, no el de Go.
@@ -31,6 +37,14 @@ var validate = func() *validator.Validate {
 	// "texto": texto libre sin etiquetas HTML (misma regla que textoSeguro del front).
 	_ = v.RegisterValidation("texto", func(fl validator.FieldLevel) bool {
 		return !strings.ContainsAny(fl.Field().String(), "<>")
+	})
+	// "estado": abreviatura de una de las 32 entidades (dominio D_ESTADO).
+	_ = v.RegisterValidation("estado", func(fl validator.FieldLevel) bool {
+		return slices.Contains(model.Estados, fl.Field().String())
+	})
+	// "cp": código postal de 5 dígitos (dominio D_CP).
+	_ = v.RegisterValidation("cp", func(fl validator.FieldLevel) bool {
+		return reCP.MatchString(fl.Field().String())
 	})
 	// "telefono": dígitos con espacios, guiones, paréntesis y + opcional (misma regla del front).
 	_ = v.RegisterValidation("telefono", func(fl validator.FieldLevel) bool {
@@ -73,6 +87,10 @@ func mensaje(fe validator.FieldError) string {
 		return "Usa como máximo " + fe.Param() + " caracteres"
 	case "texto":
 		return "No uses los caracteres < ni >"
+	case "estado":
+		return "Elige un estado de la lista"
+	case "cp":
+		return "El código postal tiene 5 dígitos"
 	case "telefono":
 		return "Escribe un teléfono válido (solo números, espacios, guiones o +)"
 	case "oneof":

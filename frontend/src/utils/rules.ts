@@ -48,3 +48,12 @@ export function sinDatosPersonales (v: string, usuario?: string, correo?: string
 // Teléfono opcional: + inicial opcional, dígitos, espacios, guiones o paréntesis (misma regla del back).
 export const telefono: Regla = v =>
   texto(v).trim().length === 0 || /^\+?\d[\d ()-]{6,19}$/.test(texto(v).trim()) || 'Escribe un teléfono válido (solo números, espacios, guiones o +)'
+
+// Código postal opcional: exactamente 5 dígitos (misma regla del back).
+export const cp: Regla = v =>
+  texto(v).trim().length === 0 || /^\d{5}$/.test(texto(v).trim()) || 'El código postal tiene 5 dígitos'
+
+// Opción de una lista cerrada (vacío permitido; para obligatorio, junto con `requerido`).
+export function enLista (opciones: readonly { value: string }[]): Regla {
+  return v => v == null || v === '' || opciones.some(o => o.value === v) || 'Elige una opción de la lista'
+}

@@ -37,7 +37,7 @@
           :error-messages="errores.puesto"
           :items="PUESTOS"
           label="Puesto *"
-          :rules="[requerido]"
+          :rules="[requerido, enLista(PUESTOS)]"
           @update:model-value="limpiarError('puesto')"
         />
       </v-col>
@@ -77,7 +77,7 @@
   import { useBaja } from '@/composables/useBaja'
   import { useFormulario } from '@/composables/useFormulario'
   import { PUESTOS, tecnicos } from '@/services/tecnicos'
-  import { maximo, requerido, telefono, textoSeguro } from '@/utils/rules'
+  import { enLista, maximo, requerido, telefono, textoSeguro } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()

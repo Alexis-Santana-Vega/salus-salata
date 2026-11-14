@@ -283,6 +283,72 @@ paths:
         '204': { description: Dado de baja }
         '404': { $ref: '#/components/responses/Error' }
 
+  /doctores:
+    get:
+      tags: [Doctores]
+      summary: Listar doctores activos (Sysadmin y Admin)
+      operationId: listarDoctores
+      security: [{ bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Q'
+        - { name: sort, in: query, description: 'nombre, numero, correo, municipio, creadoEn; con "-" adelante es descendente', schema: { type: string, default: nombre, example: -nombre } }
+      responses:
+        '200':
+          description: Página de doctores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Doctor' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Doctores]
+      summary: Alta de doctor
+      operationId: crearDoctor
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Doctor' }
+      responses:
+        '201': { $ref: '#/components/responses/Doctor' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '409': { description: Número o correo ya registrados (details indica el campo), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /doctores/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Doctores]
+      summary: Consultar un doctor
+      operationId: obtenerDoctor
+      security: [{ bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Doctor' }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [Doctores]
+      summary: Editar un doctor
+      operationId: actualizarDoctor
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Doctor' }
+      responses:
+        '200': { $ref: '#/components/responses/Doctor' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Doctores]
+      summary: Baja lógica (se conserva para el historial)
+      operationId: bajaDoctor
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Dado de baja }
+        '404': { $ref: '#/components/responses/Error' }
+
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -290,6 +356,20 @@ components:
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     Q: { name: q, in: query, description: Contiene el texto, sin importar acentos ni mayúsculas, schema: { type: string, maxLength: 100 } }
   requestBodies:
+    Doctor:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [nombre, correo]
+            properties:
+              numero: { type: string, maxLength: 20, example: DOC-001, description: "Opcional; único para siempre; se guarda en mayúsculas" }
+              nombre: { type: string, maxLength: 120, example: Dr. Aguayo }
+              correo: { type: string, format: email, description: "Único entre los activos; se guarda en minúsculas" }
+              telPersonal: { type: string, maxLength: 20 }
+              telConsultorio: { type: string, maxLength: 20 }
+              direccion: { $ref: "#/components/schemas/Direccion" }
     Tecnico:
       required: true
       content:
@@ -316,6 +396,29 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Direccion:
+      type: object
+      description: Dirección de México; todos los campos son opcionales
+      properties:
+        calle: { type: string, maxLength: 120 }
+        numExterior: { type: string, maxLength: 20 }
+        numInterior: { type: string, maxLength: 20 }
+        colonia: { type: string, maxLength: 120 }
+        cp: { type: string, pattern: "^[0-9]{5}$" }
+        municipio: { type: string, maxLength: 120, description: Ciudad o municipio }
+        estado: { type: string, enum: [AGS, BC, BCS, CAMP, COAH, COL, CHIS, CHIH, CDMX, DGO, GTO, GRO, HGO, JAL, MEX, MICH, MOR, NAY, NL, OAX, PUE, QRO, QROO, SLP, SIN, SON, TAB, TAMPS, TLAX, VER, YUC, ZAC] }
+    Doctor:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        numero: { type: string }
+        nombre: { type: string }
+        correo: { type: string, format: email }
+        telPersonal: { type: string }
+        telConsultorio: { type: string }
+        direccion: { $ref: "#/components/schemas/Direccion" }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
     Puesto:
       type: string
       enum: [AYUDANTE, ENFERMERIA, ANESTESIOLOGIA, LOGISTICA, OTRO]
@@ -387,6 +490,11 @@ components:
               items: { $ref: '#/components/schemas/FieldError' }
             requestId: { type: string }
   responses:
+    Doctor:
+      description: Doctor
+      content:
+        application/json:
+          schema: { type: object, properties: { data: { $ref: "#/components/schemas/Doctor" } } }
     Tecnico:
       description: Técnico
       content:
