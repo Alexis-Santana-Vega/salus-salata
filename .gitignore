@@ -1,0 +1,31 @@
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Backend (Go)
+backend/bin/
+backend/tmp/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Frontend (Vue)
+node_modules/
+frontend/dist/
+*.local
+*.log
+
+# Firebird (datos locales)
+data/
+*.fdb
+
+# Excel temporales
+~$*
