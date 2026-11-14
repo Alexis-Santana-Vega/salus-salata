@@ -97,3 +97,18 @@ export function rango (min: number, max: number, nombre: string): Regla {
 // Liga opcional: debe ser https://
 export const ligaHttps: Regla = v =>
   texto(v).trim().length === 0 || /^https:\/\/[^\s<>"]+$/.test(texto(v).trim()) || 'Escribe una liga completa que empiece con https://'
+
+// Importe en pesos: no negativo y con a lo más 2 decimales (mismo límite del back).
+export const dinero: Regla = v => {
+  const t = texto(v).trim()
+  if (t === '') {
+    return true
+  }
+  return (/^\d{1,10}(?:\.\d{1,2})?$/.test(t)) || 'Escribe un importe válido, con a lo más 2 decimales'
+}
+
+// Entero no negativo (piezas en stock).
+export const enteroPositivo: Regla = v => {
+  const t = texto(v).trim()
+  return t === '' || (/^\d{1,7}$/.test(t) && Number(t) <= 1_000_000) || 'Escribe un número entero de 0 a 1,000,000'
+}

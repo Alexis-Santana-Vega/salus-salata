@@ -57,6 +57,8 @@ func mensaje(fe validator.FieldError) string {
 		return "Debe ser menor o igual a " + fe.Param()
 	case "startswith":
 		return "Debe empezar con " + fe.Param()
+	case "dosdecimales":
+		return "Usa a lo más 2 decimales"
 	case "url":
 		return "Escribe una liga completa (https://…)"
 	case "latitude":

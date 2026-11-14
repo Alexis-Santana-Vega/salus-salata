@@ -62,7 +62,9 @@ A=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "Sysadmin entra a /usuarios" 200 "$(cod -H "Authorization: Bearer $A" $F/api/v1/usuarios)"
 
 # Parte de catálogos vacíos: lo que se probó a mano en la vista no interfiere.
-printf 'DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nCOMMIT;
+printf 'DELETE FROM INSUMO;
+DELETE FROM CLAVE_CATALOGO;
+DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nCOMMIT;
 ' | sql
 echo "Catálogo de procedimientos (patrón CRUD)"
 AU="Authorization: Bearer $A"
@@ -118,8 +120,8 @@ DID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "correo se guarda en minúsculas" 1 "$(grep -c '"correo":"aguayo@mail.com"' $T/r)"
 probar "alta completa con colonia del catálogo → 201" 201 "$(cod -H "$AU" -H "$J" -d "{\"numero\":\"doc-001\",\"nombre\":\"Dr. Westendarp\",\"correo\":\"west@mail.com\",\"telPersonal\":\"477 111 2222\",\"direccion\":{\"calle\":\"Av. Juarez\",\"numExterior\":\"434\",\"asentamientoId\":\"$ASEN\"}}" $DC)"
 probar "la respuesta completa C.P., municipio y estado" 1 "$(grep -c '"cp":"42000","colonia":"Centro","municipio":"Pachuca de Soto","estado":"HGO"' $T/r)"
-probar "número en mayúsculas" 1 "$(grep -c '"numero":"DOC-001"' $T/r)"
-probar "número repetido → 409 en numero" 1 "$(cod -H "$AU" -H "$J" -d '{"numero":"DOC-001","nombre":"X","correo":"x@mail.com"}' $DC >/dev/null; grep -c '"field":"numero"' $T/r)"
+probar "número interno generado (DOC-####)" 1 "$(grep -cE '"numero":"DOC-[0-9]{4}"' $T/r)"
+probar "el número enviado se ignora (lo genera el sistema)" 0 "$(cod -H "$AU" -H "$J" -d '{"numero":"DOC-9999","nombre":"Dr. Garcia","correo":"garcia@mail.com"}' $DC >/dev/null; grep -c '"numero":"DOC-9999"' $T/r)"
 probar "correo repetido con mayúsculas → 409 en correo" 1 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"AGUAYO@mail.com"}' $DC >/dev/null; grep -c '"field":"correo"' $T/r)"
 probar "colonia que no existe en el catálogo → 422 en asentamientoId" 1 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"y@mail.com","direccion":{"asentamientoId":"0193f1c2-0000-7000-8000-000000000000"}}' $DC >/dev/null; grep -c '"field":"asentamientoId"' $T/r)"
 probar "correo inválido → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"no-es-correo"}' $DC)"
@@ -149,10 +151,34 @@ probar "búsqueda por municipio (?q=pachuca) → 1" 1 "$(cod -H "$AU" "$HC?q=pac
 probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $HC/$HID)"
 probar "la clave de uno dado de baja no se reusa → 409" 409 "$(cod -H "$AU" -H "$J" -d "$CUERPO_H" $HC)"
 
+reiniciar_limites
+echo "Insumos"
+IC=$F/api/v1/insumos
+probar "alta → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"son-3-18","descripcion":"Sonda Foley 3 vias 18 fr","unidad":"PIEZA","precio":125.5,"codigoBarras":"7501234567890","stockActual":2,"stockMinimo":3}' $IC)"
+IID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
+probar "clave en mayúsculas" 1 "$(grep -c '"clave":"SON-3-18"' $T/r)"
+probar "marca bajo mínimo (2 < 3)" 1 "$(grep -c '"bajoMinimo":true' $T/r)"
+probar "precio con 2 decimales" 1 "$(grep -c '"precio":125.5' $T/r)"
+probar "clave repetida → 409 en clave" 1 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-18","descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC >/dev/null; grep -c '"field":"clave"' $T/r)"
+probar "código de barras repetido → 409" 1 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-20","descripcion":"X","unidad":"PIEZA","precio":1,"codigoBarras":"7501234567890","stockActual":0,"stockMinimo":0}' $IC >/dev/null; grep -c '"field":"codigoBarras"' $T/r)"
+probar "la transacción no deja la clave a medias (SON-3-20 sigue libre)" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-20","descripcion":"Sonda 20 fr","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "precio con 3 decimales → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"PIEZA","precio":1.005,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "precio negativo → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"PIEZA","precio":-1,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "stock negativo → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":-1,"stockMinimo":0}' $IC)"
+probar "unidad fuera de la lista → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"LITRO","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "el CHECK de la base rechaza stock negativo" 1 "$(printf "UPDATE INSUMO SET STOCK_ACTUAL = -1;\nROLLBACK;\n" | sql 2>&1 | grep -c CK_INSUMO_STOCK)"
+probar "editar la clave → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" -d '{"clave":"SON-3-18A","descripcion":"Sonda Foley 3 vias 18 fr","unidad":"PIEZA","precio":125.5,"codigoBarras":"7501234567890","stockActual":5,"stockMinimo":3}' $IC/$IID)"
+probar "ya no está bajo mínimo (5 >= 3)" 1 "$(grep -c '"bajoMinimo":false' $T/r)"
+probar "la clave anterior quedó libre → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-18","descripcion":"Sonda nueva","unidad":"CAJA","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "búsqueda por código de barras → 1" 1 "$(cod -H "$AU" "$IC?q=750123" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
+probar "orden por precio → 200" 200 "$(cod -H "$AU" "$IC?sort=-precio")"
+probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $IC/$IID)"
+probar "la clave de uno dado de baja no se reusa → 409" 409 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-18A","descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
+
 echo "Formatos de texto"
 probar "nombre de procedimiento con ; → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Holep; DROP TABLE X"}' $P)"
 probar "nombre de técnico con llaves → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"{{x}}","puesto":"OTRO"}' $TC)"
-probar "número de doctor con espacio → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"numero":"DOC 1","nombre":"X","correo":"z@mail.com"}' $DC)"
+probar "nombre de doctor con número → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dr 007","correo":"z@mail.com"}' $DC)"
 
 reiniciar_limites
 DPASS="Doctor-Integracion-2026"
@@ -164,13 +190,16 @@ probar "rol Doctor no ve el catálogo → 403" 403 "$(cod -H "Authorization: Bea
 probar "rol Doctor no ve los técnicos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $TC)"
 probar "rol Doctor no ve el catálogo de doctores → 403" 403 "$(cod -H "Authorization: Bearer $AD" $DC)"
 probar "rol Doctor no ve los hospitales → 403" 403 "$(cod -H "Authorization: Bearer $AD" $HC)"
+probar "rol Doctor no ve los insumos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $IC)"
 probar "ruta inexistente de la API sigue en 404" 404 "$(cod -H "$AU" $F/api/v1/no-existe)"
 probar "refresh con la cookie (recarga de página)" 200 "$(curl -s -b $T/c -c $T/c -o $T/r -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 probar "logout → 204" 204 "$(curl -s -b $T/c -c $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/logout)"
 probar "refresh tras logout → 401" 401 "$(curl -s -b $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 
 echo "Limpieza"
-printf 'DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
+printf 'DELETE FROM INSUMO;
+DELETE FROM CLAVE_CATALOGO;
+DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
 docker compose restart backend >/dev/null 2>&1
 rm -rf "$T"
 echo

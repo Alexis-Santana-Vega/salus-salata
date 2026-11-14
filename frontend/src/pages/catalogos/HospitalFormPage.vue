@@ -18,7 +18,7 @@
       <v-btn :block="mobile" color="error" prepend-icon="$eliminar" @click="pedirBaja({ id: id! })">Eliminar</v-btn>
     </template>
 
-    <seccion-formulario ayuda="La clave lleva el prefijo del estado de su colonia, como en el Excel (HGO-001)." primera titulo="Datos generales">
+    <seccion-formulario ayuda="La clave lleva el prefijo del estado de su colonia (HGO-001)." primera titulo="Datos generales">
       <v-col cols="12" md="3">
         <v-text-field
           v-model="datos.clave"

@@ -84,7 +84,7 @@ func (r *Doctores) PorID(ctx context.Context, id model.ID) (*model.Doctor, error
 
 // campos editables en el orden de las columnas.
 func camposDoctor(d model.Doctor) []any {
-	return append([]any{nulo(d.Numero), d.Nombre, d.Correo, nulo(d.TelPersonal), nulo(d.TelConsultorio)},
+	return append([]any{d.Nombre, d.Correo, nulo(d.TelPersonal), nulo(d.TelConsultorio)},
 		valoresDireccion(d.Direccion)...)
 }
 
@@ -94,14 +94,15 @@ func (r *Doctores) Crear(ctx context.Context, d model.Doctor) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO DOCTOR (ID, NUMERO, NOMBRE, CORREO, TEL_PERSONAL, TEL_CONSULTORIO,
 		                    CALLE, NUM_EXTERIOR, NUM_INTERIOR, ASENTAMIENTO_ID, CREADO_EN, ACTUALIZADO_EN)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args...)
+		VALUES (?, 'DOC-' || LPAD(CAST(NEXT VALUE FOR SEQ_DOCTOR_NUMERO AS VARCHAR(10)), 4, '0'),
+		        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, args...)
 	return integridad(err, indicesDoctores, foraneasDoctores)
 }
 
 func (r *Doctores) Actualizar(ctx context.Context, d model.Doctor) error {
 	args := append(camposDoctor(d), d.ActualizadoEn, d.ID)
 	res, err := r.db.ExecContext(ctx, `
-		UPDATE DOCTOR SET NUMERO = ?, NOMBRE = ?, CORREO = ?, TEL_PERSONAL = ?, TEL_CONSULTORIO = ?,
+		UPDATE DOCTOR SET NOMBRE = ?, CORREO = ?, TEL_PERSONAL = ?, TEL_CONSULTORIO = ?,
 		       CALLE = ?, NUM_EXTERIOR = ?, NUM_INTERIOR = ?, ASENTAMIENTO_ID = ?, ACTUALIZADO_EN = ?
 		WHERE ID = ? AND ACTIVO = TRUE`, args...)
 	if err != nil {

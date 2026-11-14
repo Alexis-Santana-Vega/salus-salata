@@ -3,7 +3,7 @@ import { crearRecurso } from './recursos'
 
 export interface Doctor {
   id: string
-  numero: string
+  numero: string // número interno: lo genera el sistema (solo lectura)
   nombre: string
   correo: string
   telPersonal: string
@@ -14,7 +14,7 @@ export interface Doctor {
 }
 
 export interface DatosDoctor {
-  numero: string
+  numero: string // número interno: lo genera el sistema (solo lectura)
   nombre: string
   correo: string
   telPersonal: string

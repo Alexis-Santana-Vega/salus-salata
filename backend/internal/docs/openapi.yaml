@@ -416,6 +416,74 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
 
 
+  /insumos:
+    get:
+      tags: [Insumos]
+      summary: Listar insumos activos (busca por clave, descripción o código de barras)
+      operationId: listarInsumos
+      security: [{ bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Q'
+        - { name: sort, in: query, description: 'clave, descripcion, precio, stockActual, stockMinimo, creadoEn; con "-" adelante es descendente', schema: { type: string, default: clave, example: -precio } }
+      responses:
+        '200':
+          description: Página de insumos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Insumo' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Insumos]
+      summary: Alta de insumo
+      operationId: crearInsumo
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Insumo' }
+      responses:
+        '201': { $ref: '#/components/responses/Insumo' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { description: Clave ya usada por un equipo o insumo (aunque esté dado de baja) o código de barras repetido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/Error' }
+  /insumos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Insumos]
+      summary: Consultar un insumo
+      operationId: obtenerInsumo
+      security: [{ bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Insumo' }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [Insumos]
+      summary: Editar un insumo
+      operationId: actualizarInsumo
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Insumo' }
+      responses:
+        '200': { $ref: '#/components/responses/Insumo' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Insumos]
+      summary: Baja lógica (se conserva para el historial)
+      operationId: bajaInsumo
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Dado de baja }
+        '404': { $ref: '#/components/responses/Error' }
+
+
   /codigos-postales/{cp}:
     get:
       tags: [Direcciones]
@@ -447,6 +515,21 @@ components:
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     Q: { name: q, in: query, description: Contiene el texto, sin importar acentos ni mayúsculas, schema: { type: string, maxLength: 100 } }
   requestBodies:
+    Insumo:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [clave, descripcion, unidad, precio, stockActual, stockMinimo]
+            properties:
+              clave: { type: string, maxLength: 30, example: SON-3-18, description: "Única entre equipos e insumos; se guarda en mayúsculas" }
+              descripcion: { type: string, maxLength: 200 }
+              unidad: { type: string, enum: [PIEZA, CAJA, PAQUETE] }
+              precio: { type: number, minimum: 0, multipleOf: 0.01 }
+              codigoBarras: { type: string, maxLength: 64 }
+              stockActual: { type: integer, minimum: 0 }
+              stockMinimo: { type: integer, minimum: 0 }
     Hospital:
       required: true
       content:
@@ -471,7 +554,6 @@ components:
             type: object
             required: [nombre, correo]
             properties:
-              numero: { type: string, maxLength: 20, example: DOC-001, description: "Opcional; único para siempre; se guarda en mayúsculas" }
               nombre: { type: string, maxLength: 120, example: Dr. Aguayo }
               correo: { type: string, format: email, description: "Único entre los activos; se guarda en minúsculas" }
               telPersonal: { type: string, maxLength: 20 }
@@ -503,6 +585,20 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Insumo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string }
+        descripcion: { type: string }
+        unidad: { type: string, enum: [PIEZA, CAJA, PAQUETE] }
+        precio: { type: number }
+        codigoBarras: { type: string }
+        stockActual: { type: integer }
+        stockMinimo: { type: integer }
+        bajoMinimo: { type: boolean }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
     Contacto:
       type: object
       required: [nombre]
@@ -553,7 +649,7 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
-        numero: { type: string }
+        numero: { type: string, readOnly: true, example: DOC-0001, description: "Número interno; lo genera el sistema" }
         nombre: { type: string }
         correo: { type: string, format: email }
         telPersonal: { type: string }
@@ -632,6 +728,11 @@ components:
               items: { $ref: '#/components/schemas/FieldError' }
             requestId: { type: string }
   responses:
+    Insumo:
+      description: Insumo
+      content:
+        application/json:
+          schema: { type: object, properties: { data: { $ref: "#/components/schemas/Insumo" } } }
     Hospital:
       description: Hospital
       content:

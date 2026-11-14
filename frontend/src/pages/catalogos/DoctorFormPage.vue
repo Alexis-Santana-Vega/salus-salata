@@ -31,15 +31,16 @@
         />
       </v-col>
 
-      <v-col cols="12" md="6">
+      <!-- El número interno lo genera el sistema al dar de alta (DOC-0001). -->
+      <v-col v-if="esEdicion" cols="12" md="6">
         <v-text-field
-          v-model="datos.numero"
-          :error-messages="errores.numero"
-          hint="Opcional. No se repite entre doctores."
-          label="Número"
-          maxlength="20"
-          :rules="[maximo(20), codigo]"
-          @update:model-value="limpiarError('numero')"
+          :counter="false"
+          hint="Lo asigna el sistema"
+          label="Número interno"
+          :model-value="datos.numero"
+          persistent-hint
+          readonly
+          :rules="[]"
         />
       </v-col>
 
@@ -111,7 +112,7 @@
   import { useFormulario } from '@/composables/useFormulario'
   import { doctores } from '@/services/doctores'
   import { direccionVacia } from '@/utils/direccion'
-  import { codigo, correo, maximo, nombrePersona, requerido, telefono } from '@/utils/rules'
+  import { correo, maximo, nombrePersona, requerido, telefono } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()

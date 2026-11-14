@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"strings"
 	"time"
 
 	"salus/backend/internal/model"
@@ -16,14 +15,13 @@ func NewDoctores(db *sql.DB) *Doctores { return &Doctores{db: db} }
 
 // DatosDoctor es lo que se captura en alta y edición.
 type DatosDoctor struct {
-	Numero, Nombre, Correo, TelPersonal, TelConsultorio string
-	Direccion                                           model.Direccion
+	Nombre, Correo, TelPersonal, TelConsultorio string
+	Direccion                                   model.Direccion
 }
 
-// normalizar limpia espacios; número en mayúsculas y correo en minúsculas
-// para que "doc-1" y "DOC-1" (o dos correos con distinta capitalización) choquen.
+// normalizar limpia espacios y deja el correo en minúsculas (dos correos con
+// distinta capitalización chocan). El número interno lo genera la base.
 func (d DatosDoctor) normalizar() DatosDoctor {
-	d.Numero = strings.ToUpper(limpiar(d.Numero))
 	d.Nombre = limpiar(d.Nombre)
 	d.Correo = Normalizar(d.Correo)
 	d.TelPersonal, d.TelConsultorio = limpiar(d.TelPersonal), limpiar(d.TelConsultorio)
@@ -39,7 +37,7 @@ func limpiarDireccion(a model.Direccion) model.Direccion {
 }
 
 func (d DatosDoctor) modelo(id model.ID) model.Doctor {
-	return model.Doctor{ID: id, Numero: d.Numero, Nombre: d.Nombre, Correo: d.Correo,
+	return model.Doctor{ID: id, Nombre: d.Nombre, Correo: d.Correo,
 		TelPersonal: d.TelPersonal, TelConsultorio: d.TelConsultorio, Direccion: d.Direccion}
 }
 

@@ -58,12 +58,12 @@ G1–G12 recorridos el 2026-11-14 en Procedimientos y Técnicos: ✔ (paginació
 | D5 | Alta mínima (nombre + correo) | Se guarda; listado muestra "—" en lo vacío | ✔ |
 | D6 | Alta completa con dirección | Al reabrir aparecen calle, números, C.P., colonia, municipio y estado | ✔ |
 | D7 | C.P. de Pachuca con varias colonias | Lista sus colonias; al elegir una se llenan Pachuca de Soto e Hidalgo | ✔ |
-| D8 | Número repetido | Error en Número | ✔ |
+| D8 | Alta | Se asigna solo el número interno (DOC-0001…); en edición se ve de solo lectura | ✔ |
 | D9 | Correo repetido con otras mayúsculas | Error en Correo | ✔ |
 | D10 | Buscar por nombre sin acentos, por número y por correo | Lo encuentra | ✔ |
 | D11 | Editar: quitar número y cambiar teléfono | Se guarda así | ✔ |
 | D12 | Eliminar y dar de alta otro con el mismo correo | Se permite | ✔ |
-| D13 | Número de uno dado de baja | No se permite (los números no se reusan) | ✔ |
+| D13 | Número interno de uno dado de baja | No se reasigna (secuencia) | ✔ |
 | D14 | C.P. con una sola colonia (42000) | Se elige sola "Centro" y se llenan municipio y estado | ✔ |
 | D15 | C.P. fuera del catálogo (99999) | Aviso en el C.P.; no deja elegir colonia | ✔ |
 | D16 | C.P. capturado sin elegir colonia | Error "Elige la colonia" | ✔ |
@@ -100,3 +100,22 @@ Primer recorrido 2026-11-14: D1–D13 ✔. Con el catálogo de C.P. (dirección 
 | H13 | Eliminar | Diálogo, toast, sale del listado | ✔ |
 
 Recorrido 2026-11-14 (web, qa-admin): F1–F4 y H1–H13 ✔ (H5 y H13 también por API). Hallazgos corregidos al probar: las reglas de formato validaban antes de quitar espacios de los extremos ("  Holep" se rechazaba) y el CHECK de clave de hospital necesitaba escapar el guion en `SIMILAR TO`.
+
+## 1.5 Insumos
+
+| # | Caso | Esperado | Resultado |
+|---|---|---|---|
+| I1 | Guardar vacío | Error en Clave, Descripción y Precio (Unidad trae Pieza y las existencias 0 por defecto) | ✔ |
+| I2 | Clave "son-3-18" | Se guarda "SON-3-18" | ✔ |
+| I3 | Clave repetida (otro insumo, aunque esté dado de baja) | Error en Clave | ✔ |
+| I4 | Clave que ya usa un equipo (cuando exista el paso 1.6) | Error en Clave: ya la usa un equipo | — |
+| I5 | Precio negativo, con 3 decimales o con letras | Error en Precio | ✔ |
+| I6 | Stock negativo o con decimales | Error en el campo | ✔ |
+| I7 | Código de barras repetido | Error en Código de barras | ✔ |
+| I8 | Sin código de barras | Se guarda | ✔ |
+| I9 | Stock menor al mínimo | Chip "Bajo mínimo" en el listado | ✔ |
+| I10 | Editar la clave | Se guarda la nueva y la anterior queda libre | ✔ |
+| I11 | Buscar por clave, descripción o código de barras | Lo encuentra | ✔ |
+| I12 | Ordenar por clave, descripción, precio y stock | Cambia el orden | ✔ |
+
+Recorrido 2026-11-14 (web, qa-admin): I1–I12 ✔ (I11 e I12 también por API). En la vista se comprobó la atomicidad: un alta rechazada por código de barras repetido no dejó reservada su clave. I4 se prueba al construir equipo (1.6).

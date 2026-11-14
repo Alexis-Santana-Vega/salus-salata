@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"math"
 	"reflect"
 	"regexp"
 	"strings"
@@ -54,6 +55,11 @@ func nuevoValidador() *validator.Validate {
 			return ""
 		}
 		return nombre
+	})
+	// "dosdecimales": importes con a lo más 2 decimales (centavos).
+	_ = v.RegisterValidation("dosdecimales", func(fl validator.FieldLevel) bool {
+		c := fl.Field().Float() * 100
+		return math.Abs(c-math.Round(c)) < 1e-6
 	})
 	for tag, r := range reglas {
 		// Se valida sin los espacios de los extremos: el servicio los quita al guardar.

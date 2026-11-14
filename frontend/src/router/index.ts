@@ -37,6 +37,9 @@ const router = createRouter({
             { path: 'procedimientos', component: () => import('@/pages/catalogos/ProcedimientosPage.vue') },
           ],
         },
+        { path: 'insumos', component: () => import('@/pages/inventario/InsumosPage.vue'), meta: { roles: ADMINISTRACION } },
+        { path: 'insumos/alta', component: () => import('@/pages/inventario/InsumoFormPage.vue'), meta: { roles: ADMINISTRACION } },
+        { path: 'insumos/:id', component: () => import('@/pages/inventario/InsumoFormPage.vue'), meta: { roles: ADMINISTRACION } },
         // Altas y ediciones: página propia, fuera de las pestañas.
         { path: 'catalogos/hospitales/alta', component: () => import('@/pages/catalogos/HospitalFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'catalogos/hospitales/:id', component: () => import('@/pages/catalogos/HospitalFormPage.vue'), meta: { roles: ADMINISTRACION } },

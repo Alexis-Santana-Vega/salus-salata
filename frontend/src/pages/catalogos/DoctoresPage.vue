@@ -55,7 +55,7 @@
 
   // Columnas del mock (el acceso al portal llega en la Fase 6).
   const columnas: DataTableHeader<Doctor>[] = [
-    { key: 'numero', title: 'Número', sortable: true },
+    { key: 'numero', title: 'Número interno', sortable: true },
     { key: 'nombre', title: 'Nombre', sortable: true },
     { key: 'telPersonal', title: 'Tel. personal', sortable: false },
     { key: 'telConsultorio', title: 'Tel. consultorio', sortable: false },

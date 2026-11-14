@@ -24,7 +24,6 @@ func (r direccionReq) modelo() model.Direccion {
 }
 
 type doctorReq struct {
-	Numero         string       `json:"numero" validate:"omitempty,max=20,codigo"`
 	Nombre         string       `json:"nombre" validate:"required,max=120,nombre"`
 	Correo         string       `json:"correo" validate:"required,max=254,email"`
 	TelPersonal    string       `json:"telPersonal" validate:"omitempty,telefono"`
@@ -33,7 +32,7 @@ type doctorReq struct {
 }
 
 func (r doctorReq) datos() service.DatosDoctor {
-	return service.DatosDoctor{Numero: r.Numero, Nombre: r.Nombre, Correo: r.Correo,
+	return service.DatosDoctor{Nombre: r.Nombre, Correo: r.Correo,
 		TelPersonal: r.TelPersonal, TelConsultorio: r.TelConsultorio, Direccion: r.Direccion.modelo()}
 }
 
