@@ -21,7 +21,7 @@
     </btn-primario>
   </v-card-actions>
 
-  <div v-else class="d-flex ga-2 w-100">
+  <v-card-actions v-else class="w-100">
     <v-btn class="flex-1-1" :disabled="guardando" size="large" @click="emit('cancelar')">Cancelar</v-btn>
 
     <btn-primario
@@ -34,7 +34,7 @@
     >
       {{ guardando ? 'Cargando' : etiqueta }}
     </btn-primario>
-  </div>
+  </v-card-actions>
 </template>
 
 <script lang="ts" setup>

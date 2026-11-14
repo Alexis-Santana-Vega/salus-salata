@@ -40,7 +40,7 @@ Cada paso se entrega y se revisa antes de seguir.
 |---|---|---|
 | **1.0 IDs UUID y transacciones** ✅ | Esquema de Fase 0 rehecho con UUID v7; escrituras de varios pasos (login, refresh, logout, cambio de contraseña, Sysadmin inicial) en una sola transacción | Login, refresh, integración y seguridad pasan igual que antes |
 | **1.1 Patrón CRUD + Procedimientos** ✅ | Piezas reutilizables en back (listado con `q`/`sort`, baja lógica, 409 por duplicado) y front (listado tabla/tarjetas, formulario por secciones, acciones, diálogo de baja, estado vacío, toast). Primer catálogo: Procedimientos | Alta, edición, baja, búsqueda y orden en móvil y web; Doctor recibe 403 |
-| 1.2 Técnicos | Puesto como lista cerrada | Se hace copiando el patrón |
+| **1.2 Técnicos** ✅ | Puesto como lista cerrada (CHECK + oneof + select), teléfono opcional validado igual en back y front | Se hace copiando el patrón |
 | 1.3 Doctores | Número único, correo y dirección desglosada | — |
 | 1.4 Hospitales + contactos | Primer registro con detalle hijo; misma dirección desglosada | Agregar y quitar contactos |
 | 1.5 Insumos + `CLAVE_CATALOGO` | Clave y código de barras únicos, stock ≥ 0 y mínimo | Una clave de insumo no puede repetir una de equipo |

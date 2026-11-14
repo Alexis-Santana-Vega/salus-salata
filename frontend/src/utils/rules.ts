@@ -44,3 +44,7 @@ export function sinDatosPersonales (v: string, usuario?: string, correo?: string
   const contiene = [usuario, correo].some(d => !!d && baja.includes(d.toLowerCase()))
   return !contiene || 'No debe contener tu usuario ni tu correo'
 }
+
+// Teléfono opcional: + inicial opcional, dígitos, espacios, guiones o paréntesis (misma regla del back).
+export const telefono: Regla = v =>
+  texto(v).trim().length === 0 || /^\+?\d[\d ()-]{6,19}$/.test(texto(v).trim()) || 'Escribe un teléfono válido (solo números, espacios, guiones o +)'

@@ -106,6 +106,7 @@ func run() error {
 		Config: cfg, DB: db, Version: version,
 		Tokens: tokens, Auth: authSvc, Usuarios: usuariosSvc,
 		Procedimientos: service.NewProcedimientos(db),
+		Tecnicos:       service.NewTecnicos(db),
 	})
 
 	// Única gorutina: Listen bloquea, así que corre aparte y avisa por errCh

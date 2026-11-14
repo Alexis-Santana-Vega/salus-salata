@@ -30,11 +30,14 @@ const router = createRouter({
           component: () => import('@/pages/catalogos/CatalogosPage.vue'),
           meta: { roles: ADMINISTRACION },
           children: [
-            { path: '', redirect: '/catalogos/procedimientos' },
+            { path: '', redirect: '/catalogos/tecnicos' },
+            { path: 'tecnicos', component: () => import('@/pages/catalogos/TecnicosPage.vue') },
             { path: 'procedimientos', component: () => import('@/pages/catalogos/ProcedimientosPage.vue') },
           ],
         },
         // Altas y ediciones: página propia, fuera de las pestañas.
+        { path: 'catalogos/tecnicos/alta', component: () => import('@/pages/catalogos/TecnicoFormPage.vue'), meta: { roles: ADMINISTRACION } },
+        { path: 'catalogos/tecnicos/:id', component: () => import('@/pages/catalogos/TecnicoFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'catalogos/procedimientos/alta', component: () => import('@/pages/catalogos/ProcedimientoFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'catalogos/procedimientos/:id', component: () => import('@/pages/catalogos/ProcedimientoFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'sin-permiso', component: () => import('@/pages/SinPermisoPage.vue') },

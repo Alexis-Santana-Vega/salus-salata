@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -14,6 +15,9 @@ import (
 )
 
 // validate es seguro para uso concurrente y cachea las reglas de cada struct.
+// Teléfono: + opcional y de 7 a 20 caracteres entre dígitos, espacios, guiones y paréntesis.
+var reTelefono = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
+
 var validate = func() *validator.Validate {
 	v := validator.New(validator.WithRequiredStructEnabled())
 	// Los errores usan el nombre del campo JSON, no el de Go.
@@ -27,6 +31,10 @@ var validate = func() *validator.Validate {
 	// "texto": texto libre sin etiquetas HTML (misma regla que textoSeguro del front).
 	_ = v.RegisterValidation("texto", func(fl validator.FieldLevel) bool {
 		return !strings.ContainsAny(fl.Field().String(), "<>")
+	})
+	// "telefono": dígitos con espacios, guiones, paréntesis y + opcional (misma regla del front).
+	_ = v.RegisterValidation("telefono", func(fl validator.FieldLevel) bool {
+		return reTelefono.MatchString(fl.Field().String())
 	})
 	return v
 }()
@@ -65,6 +73,8 @@ func mensaje(fe validator.FieldError) string {
 		return "Usa como máximo " + fe.Param() + " caracteres"
 	case "texto":
 		return "No uses los caracteres < ni >"
+	case "telefono":
+		return "Escribe un teléfono válido (solo números, espacios, guiones o +)"
 	case "oneof":
 		return "Elige una opción de la lista"
 	}

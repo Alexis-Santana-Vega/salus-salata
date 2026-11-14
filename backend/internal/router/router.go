@@ -25,6 +25,7 @@ type Deps struct {
 	Usuarios *service.Usuarios
 
 	Procedimientos *service.Procedimientos
+	Tecnicos       *service.Tecnicos
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -57,6 +58,7 @@ func Setup(app *fiber.App, d Deps) {
 	// inexistente sigue respondiendo 404 y no 401.
 	admin := []any{sesion, middleware.RequireRole(model.RolSysadmin, model.RolAdmin)}
 	crud(v1, "/procedimientos", admin, handler.ProcedimientosHandler{Svc: d.Procedimientos})
+	crud(v1, "/tecnicos", admin, handler.TecnicosHandler{Svc: d.Tecnicos})
 
 	// Cualquier otra ruta responde 404 con el formato único.
 	app.Use(func(c fiber.Ctx) error {

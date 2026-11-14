@@ -70,3 +70,11 @@ func unaFila(res sql.Result) error {
 	}
 	return nil
 }
+
+// nulo guarda un texto opcional vacío como NULL.
+func nulo(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}

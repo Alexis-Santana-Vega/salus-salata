@@ -13,7 +13,7 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 6. **Producción solo cuando el usuario lo pida**: `entorno.sh produccion respaldar` → `entorno.sh produccion up` → `entorno.sh produccion probar`. Nunca se desarrolla ni se prueba en producción.
 7. **Al cerrar la sesión**: `entorno.sh pruebas down` (y `produccion down` si se levantó), detener `pnpm dev`, commit y push.
 
-Cliente de base de datos del usuario: **DBeaver** (pruebas: `127.0.0.1:3050`, base `salus`, usuario `SALUS_APP`, contraseña `FIREBIRD_PASSWORD` de `.env`).
+Cliente de base de datos del usuario: **DBeaver** (pruebas: `127.0.0.1:3050`, base `salus`, usuario `SALUS_APP`, contraseña `FIREBIRD_PASSWORD` de `.env`). Los ID son `BINARY(16)`: DBeaver los pinta como caracteres raros; para leerlos usar `UUID_TO_CHAR(ID)` en la consulta o mostrar los binarios en hexadecimal (Preferencias › Editores › Editor de datos › Formato binario).
 
 ## Forma de trabajo
 - Avanzar por **pasos cortos** del plan (`docs/06-plan-de-trabajo.md`). Cada paso se entrega funcionando y se revisa antes del siguiente.

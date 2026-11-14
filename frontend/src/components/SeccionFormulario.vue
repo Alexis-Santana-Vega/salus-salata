@@ -8,9 +8,7 @@
   <v-card-text>
     <h2 class="text-title-medium font-weight-semibold">{{ titulo }}</h2>
     <p v-if="ayuda" class="text-body-medium text-text-muted">{{ ayuda }}</p>
-  </v-card-text>
 
-  <v-card-text>
     <v-row>
       <slot />
     </v-row>

@@ -15,14 +15,12 @@
 
   <v-skeleton-loader v-if="cargando" type="heading, text, text, actions" />
 
-  <v-card v-else>
-    <v-form :id="idForm" ref="form" @submit.prevent="enviar">
-      <v-expand-transition>
-        <v-card-text v-if="error">
-          <alerta-formulario :text="error" />
-        </v-card-text>
-      </v-expand-transition>
+  <v-expand-transition>
+    <alerta-formulario v-if="error && !cargando" :text="error" />
+  </v-expand-transition>
 
+  <v-card v-if="!cargando">
+    <v-form :id="idForm" ref="form" @submit.prevent="enviar">
       <slot />
     </v-form>
 

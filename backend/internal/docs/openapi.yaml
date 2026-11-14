@@ -218,6 +218,71 @@ paths:
         '204': { description: Dado de baja }
         '404': { $ref: '#/components/responses/Error' }
 
+  /tecnicos:
+    get:
+      tags: [Tecnicos]
+      summary: Listar tecnicos activos (Sysadmin y Admin)
+      operationId: listarTecnicos
+      security: [{ bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Q'
+        - { name: sort, in: query, description: 'nombre, puesto, creadoEn; con "-" adelante es descendente', schema: { type: string, default: nombre, example: -nombre } }
+      responses:
+        '200':
+          description: Página de tecnicos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Tecnico' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Tecnicos]
+      summary: Alta de técnico
+      operationId: crearTecnico
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Tecnico' }
+      responses:
+        '201': { $ref: '#/components/responses/Tecnico' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /tecnicos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Tecnicos]
+      summary: Consultar un técnico
+      operationId: obtenerTecnico
+      security: [{ bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Tecnico' }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [Tecnicos]
+      summary: Editar un técnico
+      operationId: actualizarTecnico
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Tecnico' }
+      responses:
+        '200': { $ref: '#/components/responses/Tecnico' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Tecnicos]
+      summary: Baja lógica (se conserva para el historial)
+      operationId: bajaTecnico
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Dado de baja }
+        '404': { $ref: '#/components/responses/Error' }
+
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -225,6 +290,17 @@ components:
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     Q: { name: q, in: query, description: Contiene el texto, sin importar acentos ni mayúsculas, schema: { type: string, maxLength: 100 } }
   requestBodies:
+    Tecnico:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [nombre, puesto]
+            properties:
+              nombre: { type: string, maxLength: 120, example: Rodrigo }
+              puesto: { $ref: "#/components/schemas/Puesto" }
+              telefono: { type: string, maxLength: 20, example: "+52 477 123 4567" }
     Procedimiento:
       required: true
       content:
@@ -240,6 +316,18 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Puesto:
+      type: string
+      enum: [AYUDANTE, ENFERMERIA, ANESTESIOLOGIA, LOGISTICA, OTRO]
+    Tecnico:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombre: { type: string, example: Rodrigo }
+        puesto: { $ref: "#/components/schemas/Puesto" }
+        telefono: { type: string, description: Vacío si no se capturó }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
     Procedimiento:
       type: object
       properties:
@@ -299,6 +387,11 @@ components:
               items: { $ref: '#/components/schemas/FieldError' }
             requestId: { type: string }
   responses:
+    Tecnico:
+      description: Técnico
+      content:
+        application/json:
+          schema: { type: object, properties: { data: { $ref: "#/components/schemas/Tecnico" } } }
     Procedimiento:
       description: Procedimiento
       content:

@@ -33,7 +33,8 @@ export const menu: SeccionMenu[] = [
         icono: '$catalogos',
         roles: ['SYSADMIN', 'ADMIN'],
         hijos: [
-          { titulo: 'Catálogos', to: '/catalogos/procedimientos' },
+          { titulo: 'Catálogos', to: '/catalogos' },
+          { titulo: 'Alta de técnico', to: '/catalogos/tecnicos/alta' },
           { titulo: 'Alta de procedimiento', to: '/catalogos/procedimientos/alta' },
         ],
       },

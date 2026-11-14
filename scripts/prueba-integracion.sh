@@ -74,19 +74,36 @@ probar "dado de baja ya no se consulta → 404" 404 "$(cod -H "$AU" $P/$PID)"
 probar "dado de baja sigue en la base (historial)" 1 "$(echo "SELECT COUNT(*) FROM PROCEDIMIENTO WHERE ACTIVO = FALSE;" | sql | tail -2 | head -1 | tr -d ' ')"
 probar "el nombre de uno dado de baja se puede reusar → 201" 201 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo '{"nombre":"Cirugía General y Laparoscopía"}')" $P)"
 probar "sin sesión → 401" 401 "$(cod $P)"
+
+echo "Catálogo de técnicos"
+TC=$F/api/v1/tecnicos
+probar "alta con puesto y teléfono → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Rodrigo","puesto":"AYUDANTE","telefono":"+52 477 123 4567"}' $TC)"
+TID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
+probar "alta sin teléfono → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dylan","puesto":"AYUDANTE"}' $TC)"
+probar "nombre repetido se permite (personas distintas) → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Rodrigo","puesto":"LOGISTICA"}' $TC)"
+probar "puesto fuera de la lista → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","puesto":"JEFE"}' $TC)"
+probar "teléfono inválido → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","puesto":"OTRO","telefono":"abc"}' $TC)"
+probar "el CHECK de la base también rechaza un puesto inválido" 1 "$(printf "INSERT INTO TECNICO (ID, NOMBRE, PUESTO, CREADO_EN, ACTUALIZADO_EN) VALUES (GEN_UUID(), 'X', 'JEFE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nROLLBACK;\n" | sql 2>&1 | grep -c CK_TECNICO_PUESTO)"
+probar "búsqueda por teléfono (?q=477) → 1 resultado" 1 "$(cod -H "$AU" "$TC?q=477" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
+probar "orden por puesto → 200" 200 "$(cod -H "$AU" "$TC?sort=-puesto")"
+probar "edición quita el teléfono → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" -d '{"nombre":"Rodrigo","puesto":"ENFERMERIA","telefono":""}' $TC/$TID)"
+probar "el teléfono vacío queda vacío" 1 "$(grep -c '"telefono":""' $T/r)"
+probar "baja lógica → 204" 204 "$(cod -X DELETE -H "$AU" $TC/$TID)"
+probar "dado de baja → 404" 404 "$(cod -H "$AU" $TC/$TID)"
 DPASS="Doctor-Integracion-2026"
 DHASH=$(printf '%s\n' "$DPASS" | (cd backend && PATH="$PATH:/c/Program Files/Go/bin" go run ./cmd/hash))
 printf "INSERT INTO USUARIO (ID, USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO, DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN) VALUES (GEN_UUID(), 'doctor-prueba', 'doctor-prueba@salus.local', 'Doctor Prueba', '%s', (SELECT ID FROM ROL WHERE CLAVE = 'DOCTOR'), TRUE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nCOMMIT;\n" "$DHASH" | sql
 cod -H "$J" -d "{\"usuario\":\"doctor-prueba\",\"contrasena\":\"$DPASS\"}" $F/api/v1/auth/login >/dev/null
 AD=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "rol Doctor no ve el catálogo → 403" 403 "$(cod -H "Authorization: Bearer $AD" $P)"
+probar "rol Doctor no ve los técnicos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $TC)"
 probar "ruta inexistente de la API sigue en 404" 404 "$(cod -H "$AU" $F/api/v1/no-existe)"
 probar "refresh con la cookie (recarga de página)" 200 "$(curl -s -b $T/c -c $T/c -o $T/r -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 probar "logout → 204" 204 "$(curl -s -b $T/c -c $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/logout)"
 probar "refresh tras logout → 401" 401 "$(curl -s -b $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 
 echo "Limpieza"
-printf 'DELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
+printf 'DELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
 docker compose restart backend >/dev/null 2>&1
 rm -rf "$T"
 echo
