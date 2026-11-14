@@ -10,7 +10,7 @@
       <p v-if="subtitulo" class="text-body-medium text-text-muted">{{ subtitulo }}</p>
     </v-col>
 
-    <v-col v-if="$slots.acciones" class="d-flex flex-column flex-sm-row ga-2" cols="12" sm="auto">
+    <v-col v-if="$slots.acciones" class="d-flex flex-column flex-sm-row" cols="12" sm="auto">
       <slot name="acciones" />
     </v-col>
   </v-row>

@@ -1,6 +1,6 @@
 <!-- Logo + nombre. El logo definitivo está pendiente; mientras, la inicial en un cuadro de marca. -->
 <template>
-  <div class="d-flex align-center ga-2">
+  <div class="d-flex align-center">
     <v-avatar color="primary" variant="tonal">
       <span class="text-title-medium font-weight-bold">S</span>
     </v-avatar>

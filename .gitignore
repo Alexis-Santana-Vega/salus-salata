@@ -29,3 +29,6 @@ data/
 
 # Excel temporales
 ~$*
+
+# Certificados TLS (nunca se suben)
+infra/certs/

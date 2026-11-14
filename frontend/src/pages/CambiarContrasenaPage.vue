@@ -3,90 +3,74 @@
   pantalla: sigue el mismo patrón del login (marca arriba, formulario centrado).
 -->
 <template>
-  <v-main>
-    <v-container class="d-flex flex-column fill-height">
-      <v-row class="flex-grow-0" :justify="mobile ? 'center' : 'start'" no-gutters>
-        <app-marca />
-      </v-row>
+  <auth-layout>
+    <v-form ref="form" @submit.prevent="guardar">
+      <v-row>
+        <v-col class="text-center" cols="12">
+          <h1 class="font-weight-semibold" :class="mobile ? 'text-headline-medium' : 'text-display-small'">Cambia tu contraseña</h1>
+          <p class="text-body-large text-text-muted">Por seguridad, define una contraseña nueva antes de continuar.</p>
+        </v-col>
 
-      <v-row align="center" class="w-100" justify="center">
-        <v-col
-          cols="12"
-          lg="5"
-          md="6"
-          sm="10"
-          xl="4"
-        >
-          <v-form ref="form" @submit.prevent="guardar">
-            <v-row>
-              <v-col class="text-center" cols="12">
-                <h1 class="font-weight-semibold" :class="mobile ? 'text-headline-medium' : 'text-display-small'">Cambia tu contraseña</h1>
-                <p class="text-body-large text-text-muted">Por seguridad, define una contraseña nueva antes de continuar.</p>
-              </v-col>
+        <v-expand-transition>
+          <v-col v-if="error" cols="12">
+            <v-alert color="error" icon="$error" :text="error" />
+          </v-col>
+        </v-expand-transition>
 
-              <v-expand-transition>
-                <v-col v-if="error" cols="12">
-                  <v-alert color="error" icon="$error" :text="error" />
-                </v-col>
-              </v-expand-transition>
+        <v-col cols="12">
+          <v-text-field
+            v-model="actual"
+            autocomplete="current-password"
+            :error-messages="errores.contrasenaActual"
+            label="Contraseña actual"
+            maxlength="128"
+            :rules="contrasena"
+            type="password"
+          />
+        </v-col>
 
-              <v-col cols="12">
-                <v-text-field
-                  v-model="actual"
-                  autocomplete="current-password"
-                  :error-messages="errores.contrasenaActual"
-                  label="Contraseña actual"
-                  maxlength="128"
-                  :rules="contrasena"
-                  type="password"
-                />
-              </v-col>
+        <v-col cols="12">
+          <v-text-field
+            v-model="nueva"
+            autocomplete="new-password"
+            :error-messages="errores.contrasenaNueva"
+            hint="Al menos 12 caracteres, sin tu usuario ni tu correo"
+            label="Contraseña nueva"
+            maxlength="128"
+            :rules="contrasenaNueva"
+            type="password"
+          />
+        </v-col>
 
-              <v-col cols="12">
-                <v-text-field
-                  v-model="nueva"
-                  autocomplete="new-password"
-                  :error-messages="errores.contrasenaNueva"
-                  hint="Al menos 12 caracteres, sin tu usuario ni tu correo"
-                  label="Contraseña nueva"
-                  maxlength="128"
-                  :rules="contrasenaNueva"
-                  type="password"
-                />
-              </v-col>
+        <v-col cols="12">
+          <v-text-field
+            v-model="confirmacion"
+            autocomplete="new-password"
+            label="Confirma la contraseña nueva"
+            maxlength="128"
+            :rules="[requerido, v => v === nueva || 'Las contraseñas no coinciden']"
+            type="password"
+          />
+        </v-col>
 
-              <v-col cols="12">
-                <v-text-field
-                  v-model="confirmacion"
-                  autocomplete="new-password"
-                  label="Confirma la contraseña nueva"
-                  maxlength="128"
-                  :rules="[requerido, v => v === nueva || 'Las contraseñas no coinciden']"
-                  type="password"
-                />
-              </v-col>
+        <v-col cols="12">
+          <btn-primario
+            block
+            :disabled="cargando"
+            :loading="cargando"
+            size="large"
+            type="submit"
+          >
+            {{ cargando ? 'Cargando' : 'Guardar contraseña' }}
+          </btn-primario>
+        </v-col>
 
-              <v-col cols="12">
-                <btn-primario
-                  block
-                  :disabled="cargando"
-                  :loading="cargando"
-                  size="large"
-                  type="submit"
-                >
-                  {{ cargando ? 'Cargando' : 'Guardar contraseña' }}
-                </btn-primario>
-              </v-col>
-
-              <v-col cols="12">
-                <v-btn block size="large" @click="salir">Cerrar sesión</v-btn>
-              </v-col>
-            </v-row>
-          </v-form>
+        <v-col cols="12">
+          <v-btn block size="large" @click="salir">Cerrar sesión</v-btn>
         </v-col>
       </v-row>
-    </v-container>
-  </v-main>
+    </v-form>
+  </auth-layout>
 </template>
 
 <script lang="ts" setup>
@@ -94,7 +78,7 @@
   import { reactive, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
-  import AppMarca from '@/components/AppMarca.vue'
+  import AuthLayout from '@/layouts/AuthLayout.vue'
   import { ApiError } from '@/services/api'
   import { useAuthStore } from '@/stores/auth'
   import { contrasena, contrasenaNueva, requerido } from '@/utils/rules'

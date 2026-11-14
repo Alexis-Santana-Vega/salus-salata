@@ -106,3 +106,13 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Sesión en el front | `src/stores/auth.ts`: token en memoria; al abrir la app se recupera con `/auth/refresh`; si la sesión se pierde trabajando, vuelve al login con `?volver=` (solo rutas internas). |
 | Guardas | `meta.publica` y `meta.roles` en las rutas; primer acceso obliga a `/cambiar-contrasena`; rol sin permiso → página 403 dentro del layout. |
 | Pruebas | `scripts/prueba-integracion.sh`: SPA, CSP, IP real detrás de nginx, cookie, sesión completa y limpieza de datos de prueba. |
+
+## 9. Ajustes posteriores
+| Decisión | Detalle |
+|---|---|
+| Mensajes de campos | Sin `hideDetails: 'auto'`: cada campo reserva el espacio del mensaje y no salta al validar. Solo `campo-busqueda` usa `hide-details`. |
+| Pantallas de acceso | `AuthLayout`: panel de marca (color primario, frase sin nombre de usuario y animación Lottie `public/hospital-lottie.json`) + formulario con la marca centrada y pie legal. En móvil solo el formulario. Lo usan login y cambio de contraseña. |
+| Lottie | `lottie-web` build *light* (sin `eval`, compatible con la CSP), en el componente `AnimacionLottie`; respeta "reducir movimiento". |
+| Producción | `docker-compose.prod.yml` encima del base: solo nginx publica puertos, HTTPS obligatorio con HSTS, `APP_ENV=production`, sin `/docs`, sin CORS, cookies `Secure`, logs JSON. Certificados en `infra/certs/` (no se suben). |
+| Pruebas | `scripts/prueba-integracion.sh`, `scripts/prueba-seguridad.sh` (ataques) y `scripts/prueba-produccion.sh`. `backend/cmd/hash` genera hashes para usuarios temporales de prueba. |
+| Sesión | Token de acceso 15 min; sesión renovable 7 días desde el último uso (`REFRESH_TOKEN_TTL`). |

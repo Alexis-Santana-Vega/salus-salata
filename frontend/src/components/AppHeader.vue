@@ -28,7 +28,7 @@
           <v-btn
             v-bind="props"
             aria-label="Menú de usuario"
-            class="ga-2"
+
             color="default"
             :icon="mobile"
           >

@@ -57,7 +57,7 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - **Regla de oro: mobile first y Vuetify first.** Componentes propios solo en casos especiales (cards de métricas).
 - Tema, colores, defaults de componentes y aliases **solo** en `src/plugins/vuetify.ts`. Sin colores, CSS ni clases sueltas en los `.vue`; sin props repetidas que deberían ir en `defaults`.
 - Iconos Lucide solo por alias (`$nombre`) registrados en `src/plugins/icons.ts`.
-- **Todo campo de formulario lleva `:rules`** de `src/utils/rules.ts` (sin librerías externas).
+- **Todo campo de formulario lleva `:rules`** de `src/utils/rules.ts` (sin librerías externas). Los campos reservan su espacio de mensajes (sin `hide-details`) para no saltar al mostrar errores; solo los buscadores (`campo-busqueda`) llevan `hide-details`.
 - **Skeletons** (`v-skeleton-loader`) solo en el contenido de la página, nunca en sidebar ni header; un solo skeleton por página si se puede, y skeletons propios solo para partes con peticiones independientes. También al paginar listas y tablas.
 - **Transiciones de Vuetify** (`v-fade-transition`, `v-expand-transition`, etc.) cuando algo aparece o desaparece; sin animaciones CSS propias.
 - Fuentes: Poppins para títulos, Inter para texto.

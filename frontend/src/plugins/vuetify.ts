@@ -100,11 +100,11 @@ export default createVuetify({
     BtnIcono: { variant: 'text', icon: true, color: 'text-secondary', rounded: 'lg' },
 
     // Campos: siempre outlined con la etiqueta en el borde.
-    VTextField: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
-    VTextarea: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
-    VSelect: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
-    VAutocomplete: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
-    VCombobox: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
+    VTextField: { variant: 'outlined', color: 'primary', rounded: 'lg' },
+    VTextarea: { variant: 'outlined', color: 'primary', rounded: 'lg' },
+    VSelect: { variant: 'outlined', color: 'primary', rounded: 'lg' },
+    VAutocomplete: { variant: 'outlined', color: 'primary', rounded: 'lg' },
+    VCombobox: { variant: 'outlined', color: 'primary', rounded: 'lg' },
     CampoBusqueda: {
       variant: 'outlined', rounded: 'lg', hideDetails: true, singleLine: true,
       prependInnerIcon: '$buscar', placeholder: 'Buscar', color: 'primary',
