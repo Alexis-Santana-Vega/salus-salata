@@ -71,6 +71,12 @@ func Register(app *fiber.App, cfg config.Config, log *slog.Logger) {
 	app.Use(newLimiter(limiteEscritura, "w:", func(c fiber.Ctx) bool { return !esEscritura(c.Method()) }))
 }
 
+// LoginLimiter: 10 intentos de login por minuto por IP. Es la primera barrera;
+// el servicio además bloquea por cuenta y por IP en ventanas de 15 minutos.
+func LoginLimiter() fiber.Handler {
+	return newLimiter(10, "login:", nil)
+}
+
 // newLimiter crea un límite por IP con ventana deslizante (más difícil de
 // burlar que una ventana fija, que se reinicia de golpe cada minuto).
 func newLimiter(max int, prefijo string, saltar func(fiber.Ctx) bool) fiber.Handler {

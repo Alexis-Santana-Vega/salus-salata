@@ -1,21 +1,31 @@
 openapi: 3.1.0
 info:
   title: SALUS API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     API de SALUS para la renta de equipo médico e insumos.
 
     **Convenciones**
     - Rutas versionadas: `/api/v1/...`, recursos en plural y en español.
-    - JSON en `camelCase`.
+    - JSON en `camelCase`. Peticiones y respuestas siempre como objeto.
     - Éxito: `{ "data": ... }`; listados: `{ "data": [...], "meta": { page, pageSize, total } }`.
+    - Paginación: `?page=1&pageSize=20` (máximo 100).
     - Error: `{ "error": { code, message, details?, requestId } }` con el código HTTP correcto.
     - Cada respuesta trae la cabecera `X-Request-ID` para rastrearla en el log.
+
+    **Sesión**
+    - `POST /auth/login` devuelve el token de acceso (15 min) y deja el refresh en una cookie `httpOnly`.
+    - Envía el token como `Authorization: Bearer <token>`.
+    - Cuando vence, `POST /auth/refresh` (con la cookie) da uno nuevo y rota la cookie.
 servers:
   - url: /api/v1
 tags:
   - name: Sistema
     description: Estado del servicio
+  - name: Autenticación
+    description: Inicio y cierre de sesión
+  - name: Usuarios
+    description: Administración de usuarios (Sysadmin)
 paths:
   /health:
     get:
@@ -31,13 +41,122 @@ paths:
                 type: object
                 required: [data]
                 properties:
+                  data: { $ref: '#/components/schemas/Health' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión con usuario o correo
+      description: |
+        Responde igual si el usuario no existe o la contraseña es incorrecta.
+        Tras 5 intentos fallidos para una cuenta (o 20 desde una IP) en 15 minutos responde 429.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [usuario, contrasena]
+              properties:
+                usuario: { type: string, maxLength: 254, description: Usuario o correo }
+                contrasena: { type: string, maxLength: 128, format: password }
+      responses:
+        '200': { $ref: '#/components/responses/Sesion' }
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+
+  /auth/refresh:
+    post:
+      tags: [Autenticación]
+      summary: Renovar el token de acceso con la cookie de sesión
+      description: Rota la cookie. Si se reutiliza una cookie ya usada, se cierran todas las sesiones de esa familia.
+      operationId: refresh
+      responses:
+        '200': { $ref: '#/components/responses/Sesion' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  /auth/logout:
+    post:
+      tags: [Autenticación]
+      summary: Cerrar la sesión de este dispositivo
+      operationId: logout
+      responses:
+        '204': { description: Sesión cerrada (también si ya estaba cerrada) }
+
+  /auth/me:
+    get:
+      tags: [Autenticación]
+      summary: Usuario de la sesión actual
+      operationId: me
+      security: [{ bearer: [] }]
+      responses:
+        '200':
+          description: Usuario actual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Usuario' }
+        '401': { $ref: '#/components/responses/Error' }
+
+  /auth/contrasena:
+    put:
+      tags: [Autenticación]
+      summary: Cambiar mi contraseña
+      description: Cierra las demás sesiones y devuelve una sesión nueva. Mínimo 12 caracteres, sin contener el usuario ni el correo.
+      operationId: cambiarContrasena
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contrasenaActual, contrasenaNueva]
+              properties:
+                contrasenaActual: { type: string, format: password, maxLength: 128 }
+                contrasenaNueva: { type: string, format: password, minLength: 12, maxLength: 128 }
+      responses:
+        '200': { $ref: '#/components/responses/Sesion' }
+        '401': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
+  /usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios (solo Sysadmin)
+      operationId: listarUsuarios
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Página de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                   data:
-                    $ref: '#/components/schemas/Health'
-        '503':
-          $ref: '#/components/responses/ServiceUnavailable'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+                    type: array
+                    items: { $ref: '#/components/schemas/Usuario' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+
 components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     Health:
       type: object
@@ -45,14 +164,32 @@ components:
       properties:
         status: { type: string, example: ok }
         database: { type: string, example: ok }
-        version: { type: string, example: 0.3.0 }
+        version: { type: string, example: 0.4.0 }
         time: { type: string, format: date-time }
+    Usuario:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        usuario: { type: string, example: admin }
+        correo: { type: string, format: email }
+        nombre: { type: string }
+        rol: { type: string, enum: [SYSADMIN, ADMIN, DOCTOR] }
+        activo: { type: boolean }
+        debeCambiarContrasena: { type: boolean }
+        ultimoAcceso: { type: [string, 'null'], format: date-time }
+        creadoEn: { type: string, format: date-time }
+    Meta:
+      type: object
+      properties:
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
     FieldError:
       type: object
       required: [field, message]
       properties:
-        field: { type: string, example: correo }
-        message: { type: string, example: El correo no es válido }
+        field: { type: string, example: contrasenaNueva }
+        message: { type: string, example: Usa al menos 12 caracteres }
     Error:
       type: object
       required: [error]
@@ -64,22 +201,43 @@ components:
             code:
               type: string
               enum:
-                [BAD_REQUEST, VALIDATION_ERROR, UNAUTHORIZED, FORBIDDEN, NOT_FOUND,
-                 METHOD_NOT_ALLOWED, CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, TOO_MANY_REQUESTS,
-                 INTERNAL_ERROR, SERVICE_UNAVAILABLE]
+                [BAD_REQUEST, VALIDATION_ERROR, UNAUTHORIZED, INVALID_CREDENTIALS, PASSWORD_CHANGE_REQUIRED,
+                 FORBIDDEN, NOT_FOUND, METHOD_NOT_ALLOWED, CONFLICT, PAYLOAD_TOO_LARGE,
+                 UNSUPPORTED_MEDIA_TYPE, TOO_MANY_REQUESTS, INTERNAL_ERROR, SERVICE_UNAVAILABLE]
             message: { type: string }
             details:
               type: array
               items: { $ref: '#/components/schemas/FieldError' }
             requestId: { type: string }
   responses:
+    Sesion:
+      description: Sesión iniciada. El refresh viaja en la cookie `salus_refresh` (httpOnly, SameSite=Strict).
+      headers:
+        Set-Cookie: { schema: { type: string } }
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  accessToken: { type: string }
+                  tokenType: { type: string, example: Bearer }
+                  expiresIn: { type: integer, example: 900 }
+                  usuario: { $ref: '#/components/schemas/Usuario' }
+    Error:
+      description: Error con el formato único
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     ServiceUnavailable:
       description: Un servicio necesario (p. ej. la base de datos) no responde
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
     TooManyRequests:
-      description: Se superó el límite de peticiones por minuto
+      description: Se superó un límite de peticiones o de intentos
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }

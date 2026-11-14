@@ -19,6 +19,8 @@ import (
 //   - Nombre: NNNN_descripcion.sql (se aplican en orden y una sola vez).
 //   - Sentencias terminadas en ";" al final de la línea. Para triggers y
 //     procedimientos se usa SET TERM, igual que en isql.
+//   - Firebird no deja usar en una transacción una tabla creada en ella:
+//     los datos de una tabla nueva van en la siguiente migración.
 //   - Una migración aplicada NO se edita: se crea otra nueva. Si el archivo
 //     cambia, la API se niega a arrancar (se compara su SHA-256).
 //

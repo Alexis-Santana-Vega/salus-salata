@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // zonas horarias dentro del binario (la imagen distroless no las trae)
 
 	"github.com/gofiber/fiber/v3"
 
@@ -19,6 +20,8 @@ import (
 	"salus/backend/internal/middleware"
 	"salus/backend/internal/response"
 	"salus/backend/internal/router"
+	"salus/backend/internal/security"
+	"salus/backend/internal/service"
 )
 
 // banner se incrusta en el binario al compilar; no depende de archivos en disco.
@@ -27,7 +30,7 @@ import (
 var banner string
 
 // version se puede fijar al compilar: -ldflags "-X main.version=1.2.3".
-var version = "0.3.0-dev"
+var version = "0.4.0-dev"
 
 // main solo decide el modo: chequeo de salud para Docker o servidor normal.
 func main() {
@@ -69,6 +72,20 @@ func run() error {
 		return fmt.Errorf("migraciones: %w", err)
 	}
 
+	// Servicios: se crean una vez y se comparten (son seguros para uso concurrente).
+	tokens := security.NewTokens(cfg.Auth.JWTSecret, cfg.Auth.AccessTTL)
+	authSvc, err := service.NewAuth(db, tokens, cfg.Auth.RefreshTTL, log)
+	if err != nil {
+		return err
+	}
+	usuariosSvc := service.NewUsuarios(db, log)
+	ini := cfg.Auth.AdminInicial
+	if err := usuariosSvc.AsegurarSysadmin(ctx, service.SysadminInicial{
+		Usuario: ini.Usuario, Correo: ini.Correo, Nombre: ini.Nombre, Contrasena: ini.Contrasena,
+	}); err != nil {
+		return fmt.Errorf("Sysadmin inicial: %w", err)
+	}
+
 	app := fiber.New(fiber.Config{
 		AppName:      "SALUS API",
 		ErrorHandler: response.ErrorHandler(log),
@@ -79,7 +96,10 @@ func run() error {
 		IdleTimeout:  30 * time.Second,
 	})
 	middleware.Register(app, cfg, log)
-	router.Setup(app, router.Deps{Config: cfg, DB: db, Version: version})
+	router.Setup(app, router.Deps{
+		Config: cfg, DB: db, Version: version,
+		Tokens: tokens, Auth: authSvc, Usuarios: usuariosSvc,
+	})
 
 	// Única gorutina: Listen bloquea, así que corre aparte y avisa por errCh
 	// (con buffer, para que no se quede colgada si ya estamos apagando).

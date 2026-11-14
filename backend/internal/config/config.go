@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -26,6 +27,16 @@ type Config struct {
 	DocsEnabled bool
 	CORSOrigins []string
 	DB          DBConfig
+	Auth        AuthConfig
+}
+
+type AuthConfig struct {
+	JWTSecret    string
+	AccessTTL    time.Duration
+	RefreshTTL   time.Duration
+	AdminInicial struct {
+		Usuario, Correo, Nombre, Contrasena string
+	}
 }
 
 type DBConfig struct {
@@ -58,7 +69,12 @@ func Load() (Config, error) {
 			User:     os.Getenv("FIREBIRD_USER"),
 			Password: os.Getenv("FIREBIRD_PASSWORD"),
 		},
+		Auth: AuthConfig{JWTSecret: os.Getenv("JWT_SECRET")},
 	}
+	cfg.Auth.AdminInicial.Usuario = os.Getenv("INITIAL_ADMIN_USUARIO")
+	cfg.Auth.AdminInicial.Correo = os.Getenv("INITIAL_ADMIN_CORREO")
+	cfg.Auth.AdminInicial.Nombre = get("INITIAL_ADMIN_NOMBRE", "Administrador del sistema")
+	cfg.Auth.AdminInicial.Contrasena = os.Getenv("INITIAL_ADMIN_PASSWORD")
 
 	// Se juntan todos los errores para reportarlos de una vez al arrancar.
 	var errs []error
@@ -82,6 +98,19 @@ func Load() (Config, error) {
 	}
 	if strings.EqualFold(cfg.DB.User, "SYSDBA") {
 		errs = append(errs, errors.New("la API no debe conectarse como SYSDBA; usa el usuario de la aplicación"))
+	}
+	// Secreto del JWT: aleatorio y largo; con uno corto se pueden falsificar tokens.
+	if len(cfg.Auth.JWTSecret) < 32 {
+		errs = append(errs, errors.New("JWT_SECRET debe tener al menos 32 caracteres aleatorios"))
+	}
+	var err error
+	if cfg.Auth.AccessTTL, err = time.ParseDuration(get("ACCESS_TOKEN_TTL", "15m")); err != nil ||
+		cfg.Auth.AccessTTL < time.Minute || cfg.Auth.AccessTTL > time.Hour {
+		errs = append(errs, errors.New("ACCESS_TOKEN_TTL debe estar entre 1m y 1h (ej. 15m)"))
+	}
+	if cfg.Auth.RefreshTTL, err = time.ParseDuration(get("REFRESH_TOKEN_TTL", "168h")); err != nil ||
+		cfg.Auth.RefreshTTL < time.Hour || cfg.Auth.RefreshTTL > 30*24*time.Hour {
+		errs = append(errs, errors.New("REFRESH_TOKEN_TTL debe estar entre 1h y 720h (ej. 168h)"))
 	}
 	if cfg.IsProduction() && cfg.DocsEnabled {
 		errs = append(errs, errors.New("DOCS_ENABLED no se permite en producción"))

@@ -42,6 +42,7 @@ func TestLoadRechazaSYSDBA(t *testing.T) {
 	t.Setenv("FIREBIRD_DB_ALIAS", "salus")
 	t.Setenv("FIREBIRD_USER", "sysdba")
 	t.Setenv("FIREBIRD_PASSWORD", "x")
+	t.Setenv("JWT_SECRET", "0123456789abcdef0123456789abcdef")
 	if _, err := Load(); err == nil {
 		t.Fatal("esperaba error al usar SYSDBA")
 	}

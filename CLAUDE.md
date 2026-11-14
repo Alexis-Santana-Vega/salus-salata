@@ -1,6 +1,8 @@
 # CLAUDE.md · Reglas del proyecto SALUS
 
-SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo). Consúltalos antes de implementar algo del negocio.
+SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura). Consúltalos antes de implementar algo del negocio.
+
+**`docs/09-decisiones-tecnicas.md` es la fuente de verdad técnica**: léelo antes de diseñar o escribir código. No contradigas ni reinventes lo que ahí está decidido; si algo debe cambiar, propónlo al usuario. Cada decisión nueva que se valide se agrega ahí.
 
 ## Forma de trabajo
 - Avanzar por **pasos cortos** del plan (`docs/06-plan-de-trabajo.md`). Cada paso se entrega funcionando y se revisa antes del siguiente.

@@ -37,8 +37,8 @@ services:
     build:
       context: ./backend
       args:
-        VERSION: 0.3.0
-    image: salus-backend:0.3.0
+        VERSION: 0.4.0
+    image: salus-backend:0.4.0
     container_name: salus-backend
     restart: unless-stopped
     depends_on:
@@ -57,6 +57,13 @@ services:
       FIREBIRD_DB_ALIAS: ${FIREBIRD_DB_ALIAS:?Falta FIREBIRD_DB_ALIAS en .env}
       FIREBIRD_USER: ${FIREBIRD_USER}
       FIREBIRD_PASSWORD: ${FIREBIRD_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-168h}
+      INITIAL_ADMIN_USUARIO: ${INITIAL_ADMIN_USUARIO:-}
+      INITIAL_ADMIN_CORREO: ${INITIAL_ADMIN_CORREO:-}
+      INITIAL_ADMIN_NOMBRE: ${INITIAL_ADMIN_NOMBRE:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
     ports:
       # Desarrollo: solo desde esta máquina. En producción no se publica (paso 0.6).
       - "127.0.0.1:8080:8080"

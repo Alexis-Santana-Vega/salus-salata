@@ -14,6 +14,8 @@ const (
 	CodeBadRequest         = "BAD_REQUEST"
 	CodeValidation         = "VALIDATION_ERROR"
 	CodeUnauthorized       = "UNAUTHORIZED"
+	CodeInvalidCredentials = "INVALID_CREDENTIALS"
+	CodePasswordChange     = "PASSWORD_CHANGE_REQUIRED"
 	CodeForbidden          = "FORBIDDEN"
 	CodeNotFound           = "NOT_FOUND"
 	CodeMethodNotAllowed   = "METHOD_NOT_ALLOWED"
