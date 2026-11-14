@@ -49,6 +49,7 @@ func Migrate(ctx context.Context, db *sql.DB, log *slog.Logger) error {
 		return err
 	}
 
+	// Las ya aplicadas solo se verifican; las nuevas se ejecutan en orden.
 	for _, m := range pendientes {
 		if sum, ok := aplicadas[m.version]; ok {
 			if sum != m.checksum {
@@ -64,6 +65,8 @@ func Migrate(ctx context.Context, db *sql.DB, log *slog.Logger) error {
 	return nil
 }
 
+// asegurarTabla crea SCHEMA_MIGRATIONS la primera vez (Firebird no tiene
+// CREATE TABLE IF NOT EXISTS, por eso se consulta el catálogo).
 func asegurarTabla(ctx context.Context, db *sql.DB) error {
 	var n int
 	err := db.QueryRowContext(ctx,
@@ -80,6 +83,8 @@ func asegurarTabla(ctx context.Context, db *sql.DB) error {
 	return err
 }
 
+// leerAplicadas devuelve versión → checksum de lo ya aplicado. Firebird
+// rellena CHAR con espacios, por eso el TrimSpace.
 func leerAplicadas(ctx context.Context, db *sql.DB) (map[string]string, error) {
 	rows, err := db.QueryContext(ctx, `SELECT VERSION, CHECKSUM FROM SCHEMA_MIGRATIONS`)
 	if err != nil {
@@ -97,12 +102,14 @@ func leerAplicadas(ctx context.Context, db *sql.DB) (map[string]string, error) {
 	return out, rows.Err()
 }
 
+// aplicar ejecuta una migración completa o nada: si una sentencia falla, se
+// revierte todo y no se registra.
 func aplicar(ctx context.Context, db *sql.DB, m migracion) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() { _ = tx.Rollback() }() // no hace nada si ya hubo Commit
 
 	for _, s := range m.sentencias {
 		if _, err := tx.ExecContext(ctx, s); err != nil {
@@ -117,6 +124,8 @@ func aplicar(ctx context.Context, db *sql.DB, m migracion) error {
 	return tx.Commit()
 }
 
+// cargar lee los .sql embebidos, valida nombres y versiones únicas, y calcula
+// el checksum de cada archivo.
 func cargar() ([]migracion, error) {
 	archivos, err := fs.Glob(migrationsFS, "migrations/*.sql")
 	if err != nil {
@@ -168,6 +177,7 @@ func dividir(script string) ([]string, error) {
 		linea := strings.TrimRight(sc.Text(), " \t")
 		recortada := strings.TrimSpace(linea)
 
+		// Líneas vacías y comentarios entre sentencias se ignoran.
 		if buf.Len() == 0 && (recortada == "" || strings.HasPrefix(recortada, "--")) {
 			continue
 		}
@@ -178,6 +188,7 @@ func dividir(script string) ([]string, error) {
 				continue
 			}
 		}
+		// Acumula líneas hasta encontrar el terminador actual.
 		buf.WriteString(linea)
 		buf.WriteByte('\n')
 		if strings.HasSuffix(recortada, term) {

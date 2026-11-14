@@ -17,6 +17,27 @@ func TestValidateAlias(t *testing.T) {
 	}
 }
 
+func TestValidateOrigin(t *testing.T) {
+	casos := []struct {
+		origen string
+		prod   bool
+		valido bool
+	}{
+		{"http://localhost:3000", false, true},
+		{"https://salus.mx", true, true},
+		{"http://salus.mx", true, false},
+		{"*", false, false},
+		{"https://*.salus.mx", true, false},
+		{"http://localhost:3000/app", false, false},
+		{"localhost:3000", false, false},
+	}
+	for _, c := range casos {
+		if err := validateOrigin(c.origen, c.prod); (err == nil) != c.valido {
+			t.Errorf("origen %q (prod=%v): válido=%v, error=%v", c.origen, c.prod, c.valido, err)
+		}
+	}
+}
+
 func TestLoadRechazaSYSDBA(t *testing.T) {
 	t.Setenv("FIREBIRD_DB_ALIAS", "salus")
 	t.Setenv("FIREBIRD_USER", "sysdba")

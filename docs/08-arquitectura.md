@@ -41,6 +41,12 @@ La contraseña nunca va escrita en el código: se arma desde `.env`.
 - Autenticación `Srp256` y cifrado del canal (`WireCrypt = Required`).
 - El puerto 3050 solo se publica en `127.0.0.1` y únicamente en desarrollo.
 
+## Protección de la API
+- Límite por IP con ventana deslizante: 120 peticiones por minuto en general y 30 escrituras por minuto.
+- Rechaza peticiones a `/api` sin `User-Agent` y escrituras que no sean JSON.
+- CORS solo con orígenes exactos (sin `*`; https obligatorio en producción). En producción no se usa: el front va por el mismo origen.
+- Cabeceras de seguridad (helmet), tope de 1 MB por petición, tiempos de espera y tope de conexiones simultáneas.
+
 ## Logs
 - Una línea por petición: método, ruta, código, milisegundos, IP y `requestId`. Nunca cuerpos, contraseñas, tokens ni cookies.
 - Desarrollo: texto legible. Producción (`APP_ENV=production`): JSON por la salida estándar, para que Docker o un colector los guarde.

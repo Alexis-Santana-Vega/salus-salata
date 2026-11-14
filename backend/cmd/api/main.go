@@ -29,6 +29,7 @@ var banner string
 // version se puede fijar al compilar: -ldflags "-X main.version=1.2.3".
 var version = "0.3.0-dev"
 
+// main solo decide el modo: chequeo de salud para Docker o servidor normal.
 func main() {
 	healthcheck := flag.Bool("healthcheck", false, "consulta /api/v1/health y sale con 0 si está sano (para Docker)")
 	flag.Parse()
@@ -42,6 +43,8 @@ func main() {
 	}
 }
 
+// run arma la aplicación en orden: config → log → BD → migraciones → HTTP,
+// y la apaga limpio al recibir Ctrl+C o SIGTERM (docker stop).
 func run() error {
 	fmt.Println(banner)
 
@@ -52,6 +55,7 @@ func run() error {
 	log := newLogger(cfg)
 	log.Info("iniciando SALUS API", "version", version, "env", cfg.Env)
 
+	// ctx se cancela con la señal de apagado; todo el arranque lo respeta.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -69,13 +73,16 @@ func run() error {
 		AppName:      "SALUS API",
 		ErrorHandler: response.ErrorHandler(log),
 		BodyLimit:    1 << 20, // 1 MB
-		ReadTimeout:  15 * time.Second,
+		Concurrency:  2048,    // tope de conexiones simultáneas
+		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		IdleTimeout:  30 * time.Second,
 	})
 	middleware.Register(app, cfg, log)
 	router.Setup(app, router.Deps{Config: cfg, DB: db, Version: version})
 
+	// Única gorutina: Listen bloquea, así que corre aparte y avisa por errCh
+	// (con buffer, para que no se quede colgada si ya estamos apagando).
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- app.Listen(":"+cfg.Port, fiber.ListenConfig{DisableStartupMessage: true})
@@ -88,6 +95,7 @@ func run() error {
 	case <-ctx.Done():
 	}
 
+	// Termina las peticiones en curso (máximo 10 s) antes de cerrar.
 	log.Info("apagando…")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -107,6 +115,7 @@ func newLogger(cfg config.Config) *slog.Logger {
 	return l
 }
 
+// runHealthcheck lo usa Docker (la imagen no tiene curl): 0 = sano, 1 = no.
 func runHealthcheck() int {
 	port := os.Getenv("PORT")
 	if port == "" {

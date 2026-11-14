@@ -31,6 +31,10 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Migraciones en `internal/database/migrations/NNNN_descripcion.sql`; una migración aplicada **no se edita**, se crea otra.
 - Logs con `slog`; nunca registrar contraseñas, tokens, cookies ni cuerpos de petición.
 - La API se conecta a Firebird con `SALUS_APP`, nunca con SYSDBA.
+- **Gorutinas con cuidado**: solo si hacen falta, cada una con forma clara de terminar (context) y sin fugas ni carreras. Consultar la documentación de Go antes de un patrón concurrente nuevo.
+- Comentarios internos en las funciones: directos y concisos, lo justo para seguir el hilo.
+- Consultas: sin N+1 (JOIN o `IN` por lote) y sin OFFSET grande; cuando un listado crezca, paginar por cursor (keyset).
+- Llamadas a servicios externos: un paquete por servicio en `internal/client/`, con `http.Client` con timeout y `context`; credenciales por variables de entorno.
 
 ## API (consistente en todo el proyecto)
 - REST, versión en la ruta: `/api/v1/...`; recursos en plural y en español (`/api/v1/hospitales`).
@@ -38,6 +42,8 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - JSON en `camelCase`. Un **solo formato de error** para toda la API.
 - Listados con los mismos parámetros de paginación, búsqueda, filtros y orden.
 - Validación de entrada en cada endpoint y autorización por rol en el back.
+- **Extensible sin romper**: respuestas siempre como objeto (`data`/`meta`, nunca un arreglo suelto) y peticiones como objeto JSON, para poder agregar campos después. Los cambios son aditivos; lo que rompa compatibilidad va a `/api/v2`.
+- CORS solo con orígenes explícitos (nunca `*`); en producción el front va por el mismo origen y CORS queda vacío.
 
 ## Seguridad de usuarios
 - Contraseñas con hash y sal (argon2id o bcrypt); nunca en texto plano ni en logs.
@@ -49,6 +55,7 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Seguir `docs/05-guia-diseno.md`. Resumen: mobile first, Poppins, primario #0195B7 / secundario #4FB5AB, campos outlined, modo oscuro requerido, sin fondos negros, en pasteles el texto lleva el mismo tono más fuerte.
 - Botón primario sólido; secundario solo texto; de icono sin borde ni fondo. Si dispara una carga: se deshabilita, muestra spinner y dice "Cargando".
 - El usuario da instrucciones de diseño al llegar al paso del front; no adelantarse.
+- **Errores al usuario siempre amigables** (toast o alerta según el caso): nunca mostrar códigos, enums, stack, `requestId` crudo ni mensajes técnicos. El front traduce cada `code` de la API a lenguaje del usuario; lo técnico queda en los logs.
 
 ## Negocio (lo que más se confunde)
 - **Equipo** (reutilizable, modelo maestro + unidades, se cobra **solo por hora**) ≠ **Insumo** (desechable, por stock, los no usados regresan).

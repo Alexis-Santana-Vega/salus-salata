@@ -65,7 +65,7 @@ components:
               type: string
               enum:
                 [BAD_REQUEST, VALIDATION_ERROR, UNAUTHORIZED, FORBIDDEN, NOT_FOUND,
-                 METHOD_NOT_ALLOWED, CONFLICT, PAYLOAD_TOO_LARGE, TOO_MANY_REQUESTS,
+                 METHOD_NOT_ALLOWED, CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, TOO_MANY_REQUESTS,
                  INTERNAL_ERROR, SERVICE_UNAVAILABLE]
             message: { type: string }
             details:

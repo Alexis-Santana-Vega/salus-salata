@@ -19,6 +19,7 @@ const (
 	CodeMethodNotAllowed   = "METHOD_NOT_ALLOWED"
 	CodeConflict           = "CONFLICT"
 	CodePayloadTooLarge    = "PAYLOAD_TOO_LARGE"
+	CodeUnsupportedMedia   = "UNSUPPORTED_MEDIA_TYPE"
 	CodeTooManyRequests    = "TOO_MANY_REQUESTS"
 	CodeInternal           = "INTERNAL_ERROR"
 	CodeServiceUnavailable = "SERVICE_UNAVAILABLE"
@@ -54,6 +55,9 @@ func Conflict(msg string) *Error  { return New(http.StatusConflict, CodeConflict
 func TooManyRequests(msg string) *Error {
 	return New(http.StatusTooManyRequests, CodeTooManyRequests, msg)
 }
+func UnsupportedMediaType() *Error {
+	return New(http.StatusUnsupportedMediaType, CodeUnsupportedMedia, "El contenido debe enviarse como JSON")
+}
 func ServiceUnavailable(msg string) *Error {
 	return New(http.StatusServiceUnavailable, CodeServiceUnavailable, msg)
 }
@@ -80,6 +84,7 @@ func ErrorHandler(log *slog.Logger) fiber.ErrorHandler {
 		var appErr *Error
 		var fe *fiber.Error
 
+		// Traduce el error a *Error: propio, de Fiber o inesperado (500).
 		switch {
 		case errors.As(err, &appErr):
 		case errors.As(err, &fe):
@@ -88,6 +93,7 @@ func ErrorHandler(log *slog.Logger) fiber.ErrorHandler {
 			appErr = New(http.StatusInternalServerError, CodeInternal, "Ocurrió un error inesperado. Intenta de nuevo.")
 		}
 
+		// Solo los 5xx van al log como error: son fallas nuestras, no del cliente.
 		rid := requestid.FromContext(c)
 		if appErr.Status >= http.StatusInternalServerError {
 			log.Error("error en la petición",
@@ -101,6 +107,8 @@ func ErrorHandler(log *slog.Logger) fiber.ErrorHandler {
 	}
 }
 
+// fromFiber traduce los errores internos de Fiber al formato único, sin
+// exponer su mensaje técnico.
 func fromFiber(fe *fiber.Error) *Error {
 	switch fe.Code {
 	case http.StatusNotFound:

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -59,6 +60,7 @@ func Load() (Config, error) {
 		},
 	}
 
+	// Se juntan todos los errores para reportarlos de una vez al arrancar.
 	var errs []error
 	if cfg.Env != EnvDevelopment && cfg.Env != EnvProduction {
 		errs = append(errs, fmt.Errorf("APP_ENV debe ser %q o %q", EnvDevelopment, EnvProduction))
@@ -84,7 +86,29 @@ func Load() (Config, error) {
 	if cfg.IsProduction() && cfg.DocsEnabled {
 		errs = append(errs, errors.New("DOCS_ENABLED no se permite en producción"))
 	}
+	for _, o := range cfg.CORSOrigins {
+		if err := validateOrigin(o, cfg.IsProduction()); err != nil {
+			errs = append(errs, err)
+		}
+	}
 	return cfg, errors.Join(errs...)
+}
+
+// validateOrigin acepta solo orígenes exactos (esquema + host + puerto opcional).
+// Rechaza comodines y rutas; en producción exige https.
+func validateOrigin(o string, prod bool) error {
+	u, err := url.Parse(o)
+	switch {
+	case strings.Contains(o, "*"):
+		return fmt.Errorf("CORS_ORIGINS no admite comodines: %q", o)
+	case err != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https"):
+		return fmt.Errorf("CORS_ORIGINS tiene un origen inválido: %q (ej. http://localhost:3000)", o)
+	case u.Path != "" || u.RawQuery != "" || u.User != nil:
+		return fmt.Errorf("CORS_ORIGINS debe ser solo esquema y host, sin ruta: %q", o)
+	case prod && u.Scheme != "https":
+		return fmt.Errorf("en producción CORS_ORIGINS debe usar https: %q", o)
+	}
+	return nil
 }
 
 // validateAlias obliga a usar un alias de databases.conf y nunca una ruta.
@@ -98,6 +122,7 @@ func validateAlias(alias string) error {
 	return nil
 }
 
+// get devuelve la variable sin espacios o el valor por defecto si está vacía.
 func get(key, def string) string {
 	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
 		return v
@@ -105,6 +130,7 @@ func get(key, def string) string {
 	return def
 }
 
+// getBool interpreta true/false/1/0; si el valor no es válido usa el defecto.
 func getBool(key string, def bool) bool {
 	v, err := strconv.ParseBool(get(key, strconv.FormatBool(def)))
 	if err != nil {
@@ -113,6 +139,7 @@ func getBool(key string, def bool) bool {
 	return v
 }
 
+// getList separa una variable por comas e ignora elementos vacíos.
 func getList(key string) []string {
 	var out []string
 	for _, p := range strings.Split(os.Getenv(key), ",") {

@@ -34,11 +34,13 @@ func Open(ctx context.Context, c config.DBConfig, log *slog.Logger) (*sql.DB, er
 	if err != nil {
 		return nil, fmt.Errorf("abrir conexión: %w", err)
 	}
+	// Pool pequeño: Firebird crea un proceso/hilo por conexión.
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(30 * time.Minute)
 	db.SetConnMaxIdleTime(5 * time.Minute)
 
+	// sql.Open no conecta; el Ping sí. Se reintenta ~30 s por si la BD arranca.
 	const intentos = 15
 	for i := 1; ; i++ {
 		pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
@@ -53,6 +55,7 @@ func Open(ctx context.Context, c config.DBConfig, log *slog.Logger) (*sql.DB, er
 			return nil, fmt.Errorf("no se pudo conectar a Firebird (%s:%s/%s): %w", c.Host, c.Port, c.Alias, err)
 		}
 		log.Warn("Firebird no responde, reintentando", "intento", i, "error", err)
+		// Espera 2 s o sale antes si se cancela el arranque (Ctrl+C / SIGTERM).
 		select {
 		case <-time.After(2 * time.Second):
 		case <-ctx.Done():
