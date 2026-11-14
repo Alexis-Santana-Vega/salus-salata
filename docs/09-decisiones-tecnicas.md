@@ -115,4 +115,6 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Lottie | `lottie-web` build *light* (sin `eval`, compatible con la CSP), en el componente `AnimacionLottie`; respeta "reducir movimiento". |
 | Producción | `docker-compose.prod.yml` encima del base: solo nginx publica puertos, HTTPS obligatorio con HSTS, `APP_ENV=production`, sin `/docs`, sin CORS, cookies `Secure`, logs JSON. Certificados en `infra/certs/` (no se suben). |
 | Pruebas | `scripts/prueba-integracion.sh`, `scripts/prueba-seguridad.sh` (ataques) y `scripts/prueba-produccion.sh`. `backend/cmd/hash` genera hashes para usuarios temporales de prueba. |
+| PWA | Instalable (manifest + iconos + theme-color), **sin service worker ni modo sin conexión**. Logos claro/oscuro en `src/assets`, `AppMarca` cambia según el tema. |
+| Contraseñas | Componente `CampoContrasena` (ojo para mostrar/ocultar) en todos los campos de contraseña. |
 | Sesión | Token de acceso 15 min; sesión renovable 7 días desde el último uso (`REFRESH_TOKEN_TTL`). |

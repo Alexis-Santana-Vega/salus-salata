@@ -6,7 +6,8 @@
 <template>
   <v-main>
     <v-row class="fill-height" no-gutters>
-      <v-col v-if="!mobile" class="d-flex" md="6">
+      <!-- Solo desde md: en móvil no se pinta ni ocupa espacio. -->
+      <v-col class="d-none d-md-flex" md="6">
         <v-sheet class="d-flex flex-column justify-center flex-grow-1 pa-4" color="primary">
           <v-row justify="center">
             <v-col cols="10" lg="8">
@@ -47,10 +48,8 @@
 </template>
 
 <script lang="ts" setup>
-  import { useDisplay } from 'vuetify'
   import AnimacionLottie from '@/components/AnimacionLottie.vue'
   import AppMarca from '@/components/AppMarca.vue'
 
-  const { mobile } = useDisplay()
   const anio = new Date().getFullYear()
 </script>

@@ -4,7 +4,14 @@
   Si el usuario pidió reducir movimiento, se muestra el primer cuadro fijo.
 -->
 <template>
-  <div ref="contenedor" aria-hidden="true" class="w-100" />
+  <!-- Alto acotado: la animación se ajusta (sin deformarse) y nunca empuja la página. -->
+  <v-responsive
+    aria-hidden="true"
+    :height="alto"
+    width="100%"
+  >
+    <div ref="contenedor" class="w-100 h-100" />
+  </v-responsive>
 </template>
 
 <script lang="ts" setup>
@@ -12,7 +19,7 @@
   import lottie from 'lottie-web/build/player/lottie_light'
   import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-  const props = defineProps<{ src: string }>()
+  const props = withDefaults(defineProps<{ src: string, alto?: string }>(), { alto: '40vh' })
 
   const contenedor = ref<HTMLElement>()
   let animacion: AnimationItem | undefined
@@ -28,6 +35,7 @@
         loop: !reducir,
         autoplay: !reducir,
         animationData: datos,
+        rendererSettings: { preserveAspectRatio: 'xMidYMid meet' },
       })
     } catch {
       // Sin animación no pasa nada: es decorativa.

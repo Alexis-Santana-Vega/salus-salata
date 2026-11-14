@@ -37,3 +37,10 @@ export const textoSeguro: Regla = v =>
 // Mismos límites que el backend (docs/09).
 export const contrasena: Regla[] = [requerido, maximo(128)]
 export const contrasenaNueva: Regla[] = [requerido, minimo(12), maximo(128)]
+
+// La contraseña no debe contener el usuario ni el correo (misma regla del backend).
+export function sinDatosPersonales (v: string, usuario?: string, correo?: string): true | string {
+  const baja = v.toLowerCase()
+  const contiene = [usuario, correo].some(d => !!d && baja.includes(d.toLowerCase()))
+  return !contiene || 'No debe contener tu usuario ni tu correo'
+}

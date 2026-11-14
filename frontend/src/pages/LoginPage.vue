@@ -29,15 +29,11 @@
         </v-col>
 
         <v-col cols="12">
-          <v-text-field
+          <campo-contrasena
             v-model="contrasenaValor"
-            :append-inner-icon="verContrasena ? '$ocultar' : '$ver'"
             autocomplete="current-password"
             label="Contraseña"
-            maxlength="128"
             :rules="contrasena"
-            :type="verContrasena ? 'text' : 'password'"
-            @click:append-inner="verContrasena = !verContrasena"
           />
         </v-col>
 
@@ -62,6 +58,7 @@
   import { ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import CampoContrasena from '@/components/CampoContrasena.vue'
   import AuthLayout from '@/layouts/AuthLayout.vue'
   import { ApiError } from '@/services/api'
   import { useAuthStore } from '@/stores/auth'
@@ -74,7 +71,6 @@
   const form = ref<VForm>()
   const usuario = ref('')
   const contrasenaValor = ref('')
-  const verContrasena = ref(false)
   const cargando = ref(false)
   const error = ref('')
 
