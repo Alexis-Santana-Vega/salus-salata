@@ -11,18 +11,12 @@
       <p class="text-body-large text-text-muted">{{ info.texto }}</p>
     </v-col>
 
-    <v-col cols="12" />
-
     <v-col v-if="info.secundaria" :cols="mobile ? 12 : 'auto'">
       <v-btn :block="mobile" size="large" @click="secundaria">{{ info.secundaria }}</v-btn>
     </v-col>
 
     <v-col :cols="mobile ? 12 : 'auto'">
       <btn-primario :block="mobile" size="large" to="/">Volver al inicio</btn-primario>
-    </v-col>
-
-    <v-col class="text-body-small text-text-muted" cols="12">
-      Código de error {{ codigo }} · Si el problema continúa, comuníquese con el administrador del sistema.
     </v-col>
   </v-row>
 </template>
@@ -31,10 +25,12 @@
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import { useAuthStore } from '@/stores/auth'
 
   const props = defineProps<{ codigo: '404' | '403' | '500' | '503' }>()
 
   const router = useRouter()
+  const auth = useAuthStore()
   const { mobile } = useDisplay()
 
   // Textos del mock.
@@ -46,9 +42,14 @@
   }
   const info = computed(() => textos[props.codigo])
 
-  function secundaria () {
-    if (props.codigo === '403') router.push('/login')
-    else router.go(0)
+  // 403 → cerrar sesión para entrar con otra cuenta; 500/503 → recargar.
+  async function secundaria () {
+    if (props.codigo === '403') {
+      await auth.logout()
+      await router.push('/login')
+    } else {
+      router.go(0)
+    }
   }
 </script>
 

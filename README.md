@@ -17,7 +17,8 @@ Git, Go 1.27+, Node 26+, pnpm 12+ y Docker. **No usar npm.**
 copy .env.example .env
 docker compose up -d --build
 ```
-- API: http://localhost:8080/api/v1/health
+- App: http://localhost:8081 (nginx, puerta única)
+- API directa (solo desarrollo): http://localhost:8080/api/v1/health
 - Documentación (Scalar): http://localhost:8080/docs (con `DOCS_ENABLED=true`)
 - Firebird: `127.0.0.1:3050`, alias `salus` ([docs/07-firebird-alias.md](docs/07-firebird-alias.md))
 
@@ -36,6 +37,9 @@ pnpm dev
 ```
 
 ## Pruebas
+```bash
+bash scripts/prueba-integracion.sh
+```
 ```bash
 cd backend && go vet ./... && go test ./...
 cd frontend && pnpm lint && pnpm build

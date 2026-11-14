@@ -25,15 +25,21 @@
 
       <v-menu>
         <template #activator="{ props }">
-          <v-btn v-bind="props" aria-label="Menú de usuario" color="default" :icon="mobile">
+          <v-btn
+            v-bind="props"
+            aria-label="Menú de usuario"
+            class="ga-2"
+            color="default"
+            :icon="mobile"
+          >
             <v-avatar color="primary" variant="tonal">
-              <span class="text-label-large font-weight-semibold">{{ usuario.iniciales }}</span>
+              <span class="text-label-large font-weight-semibold">{{ auth.iniciales }}</span>
             </v-avatar>
 
             <template v-if="!mobile">
-              <span class="d-flex flex-column align-start ms-2">
-                <span class="text-label-large font-weight-semibold">{{ usuario.nombre }}</span>
-                <span class="text-body-small text-text-muted">{{ usuario.rol }}</span>
+              <span class="d-flex flex-column align-start">
+                <span class="text-label-large font-weight-semibold">{{ auth.usuario?.nombre }}</span>
+                <span class="text-body-small text-text-muted">{{ auth.usuario ? NOMBRE_ROL[auth.usuario.rol] : "" }}</span>
               </span>
 
               <v-icon end icon="$dropdown" />
@@ -49,7 +55,7 @@
             @click="app.alternarTema()"
           />
 
-          <v-list-item prepend-icon="$salir" title="Cerrar sesión" to="/login" />
+          <v-list-item prepend-icon="$salir" title="Cerrar sesión" @click="salir" />
         </v-list>
       </v-menu>
     </template>
@@ -57,12 +63,19 @@
 </template>
 
 <script lang="ts" setup>
+  import { useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
   import { useAppStore } from '@/stores/app'
+  import { NOMBRE_ROL, useAuthStore } from '@/stores/auth'
 
   const app = useAppStore()
   const { mobile } = useDisplay()
 
-  // Datos fijos hasta la integración con la API (paso 0.6).
-  const usuario = { nombre: 'Admin SALUS', rol: 'Administrador', iniciales: 'AS' }
+  const auth = useAuthStore()
+  const router = useRouter()
+
+  async function salir () {
+    await auth.logout()
+    await router.replace('/login')
+  }
 </script>

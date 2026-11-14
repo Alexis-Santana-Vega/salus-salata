@@ -26,6 +26,8 @@ services:
     ports:
       # Solo accesible desde esta máquina (para isql/DBeaver en desarrollo).
       - "127.0.0.1:${FIREBIRD_PORT:-3050}:3050"
+    networks:
+      - salus
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/3050'"]
       interval: 10s
@@ -37,8 +39,8 @@ services:
     build:
       context: ./backend
       args:
-        VERSION: 0.4.0
-    image: salus-backend:0.4.0
+        VERSION: 0.6.0
+    image: salus-backend:0.6.0
     container_name: salus-backend
     restart: unless-stopped
     depends_on:
@@ -64,14 +66,49 @@ services:
       INITIAL_ADMIN_CORREO: ${INITIAL_ADMIN_CORREO:-}
       INITIAL_ADMIN_NOMBRE: ${INITIAL_ADMIN_NOMBRE:-}
       INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+      # Solo se confía en X-Real-IP si la petición viene de nginx (IP fija abajo).
+      TRUSTED_PROXIES: 172.28.0.10
     ports:
-      # Desarrollo: solo desde esta máquina. En producción no se publica (paso 0.6).
+      # Solo desarrollo (curl, Scalar). En producción se quita: se entra por nginx.
       - "127.0.0.1:8080:8080"
     read_only: true
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+
+    networks:
+      - salus
+
+  frontend:
+    build:
+      context: ./frontend
+    image: salus-frontend:0.6.0
+    container_name: salus-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      # Puerta única de la app. En producción: 80/443 público con TLS.
+      - "127.0.0.1:${FRONTEND_PORT:-8081}:8080"
+    networks:
+      salus:
+        ipv4_address: 172.28.0.10
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+# Red interna con rango fijo para fijar la IP de nginx (proxy de confianza).
+networks:
+  salus:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
 
 volumes:
   salus-db-data:

@@ -110,6 +110,9 @@ export default createVuetify({
       prependInnerIcon: '$buscar', placeholder: 'Buscar', color: 'primary',
     },
 
+    // Grid: los espacios entre bloques salen de aquí (ver docs/09 › Espaciado).
+    VRow: { density: 'comfortable' },
+
     VCard: { elevation: 0, border: true, rounded: 'lg' },
     VAlert: { variant: 'tonal', color: 'info', rounded: 'lg', border: false },
     VChip: { variant: 'tonal', rounded: 'lg', size: 'small' },

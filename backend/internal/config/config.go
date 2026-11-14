@@ -26,8 +26,10 @@ type Config struct {
 	LogLevel    slog.Level
 	DocsEnabled bool
 	CORSOrigins []string
-	DB          DBConfig
-	Auth        AuthConfig
+	// IPs del proxy (nginx) en las que se confía para leer X-Real-IP.
+	TrustedProxies []string
+	DB             DBConfig
+	Auth           AuthConfig
 }
 
 type AuthConfig struct {
@@ -58,10 +60,11 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		Env:         get("APP_ENV", EnvDevelopment),
-		Port:        get("PORT", "8080"),
-		DocsEnabled: getBool("DOCS_ENABLED", false),
-		CORSOrigins: getList("CORS_ORIGINS"),
+		Env:            get("APP_ENV", EnvDevelopment),
+		Port:           get("PORT", "8080"),
+		DocsEnabled:    getBool("DOCS_ENABLED", false),
+		CORSOrigins:    getList("CORS_ORIGINS"),
+		TrustedProxies: getList("TRUSTED_PROXIES"),
 		DB: DBConfig{
 			Host:     get("FIREBIRD_HOST", "127.0.0.1"),
 			Port:     get("FIREBIRD_PORT", "3050"),

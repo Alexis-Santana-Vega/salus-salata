@@ -69,7 +69,7 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Auditoría | `AUDITORIA_ACCESO`: login correcto, fallido, bloqueado, logout, reuso de refresh y cambio de contraseña, con IP y User-Agent. |
 | Protección general | Límite por IP con ventana deslizante (120/min general, 30/min escrituras), `User-Agent` obligatorio en `/api`, escrituras solo JSON, helmet, 1 MB por petición, timeouts y tope de conexiones. |
 | CORS | Solo orígenes exactos; sin `*`; https obligatorio en producción. En producción no se usa. |
-| IP real | Detrás de nginx hay que configurar el proxy de confianza (paso 0.6), si no, todos los usuarios comparten la IP del proxy. |
+| IP real | nginx manda `X-Real-IP`; el backend solo la lee si la petición viene de `TRUSTED_PROXIES` (la IP fija de nginx, `172.28.0.10` en la red `salus`). Directo al backend se ignora. |
 
 ## 7. Frontend
 | Decisión | Detalle |
@@ -83,7 +83,7 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Tipografía | Poppins 400/500/600/700 desde `@fontsource/poppins` (sin CDN). |
 | SASS | `src/styles/settings.scss`: fuente, botones sin mayúsculas y `$color-pack: false` (quita la paleta Material). |
 | Tree-shaking | `vite-plugin-vuetify` con `autoImport`: solo se empaqueta lo que se usa. Páginas cargadas bajo demanda en el router. |
-| Grid | Espaciados con `v-container`/`v-row`/`v-col` y utilidades de Vuetify; nada de márgenes a mano. |
+| Espaciado | 1) **Grid primero**: bloques de la página en `v-row` (density `comfortable` global) / `v-col`; el gutter es el espacio estándar. 2) Dentro de un `d-flex`, solo `ga-*` con la escala **2 (8 px)** entre elementos relacionados (botones, icono+texto) y **4 (16 px)** entre grupos. 3) `pa-4` solo en contenedores que no traen padding propio (p. ej. el prepend del drawer). 4) **Nunca márgenes** (`ma-*`, `mt-*`, `mb-*`…) ni valores fuera de la escala. 5) Si un espaciado debe cambiar en toda la app, se cambia en `defaults` o en SASS, no en cada archivo. |
 | Validación | **Todo campo lleva `:rules`** con las reglas de `src/utils/rules.ts` (sin librerías). Mismos límites que el back. |
 | Carga (skeletons) | `v-skeleton-loader` solo en el **contenido de la página**, nunca en sidebar ni header. Preferible un solo skeleton para toda la página (una animación de un jalón); si partes de la UI dependen de peticiones distintas, cada una lleva su propio skeleton para no bloquear el resto. También en listas y tablas al paginar (`loading` de `v-data-table` con skeleton de filas). |
 | Transiciones | Usar las transiciones de Vuetify (`v-fade-transition`, `v-expand-transition`, `v-slide-y-transition`, prop `transition`) cuando algo aparece o desaparece, para evitar saltos. Sin animaciones CSS propias. |
@@ -95,3 +95,14 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Refresh | Una sola renovación a la vez: si varias peticiones reciben 401 juntas, esperan la misma promesa (dos renovaciones simultáneas parecen robo y cierran la sesión). |
 | Roles | Guardas de ruta y menús por rol, solo para la experiencia; la seguridad real está en el back. |
 | Validación | Las mismas reglas que el back (largos, obligatorios) para avisar antes de enviar. |
+
+## 8. Integración (paso 0.6)
+| Decisión | Detalle |
+|---|---|
+| Puerta única | Contenedor `frontend`: `nginxinc/nginx-unprivileged` (sin root, solo lectura) sirve `dist/` y reenvía `/api/` a `backend:8080`. `/docs` no se expone por nginx. Cabeceras de seguridad y CSP en `frontend/nginx.conf`. |
+| Build del front | Node 24 + corepack (instala el pnpm fijado en `package.json`); `pnpm install --frozen-lockfile`. |
+| Desarrollo | Vite reenvía `/api` a `localhost:8080`: mismo origen que producción, sin CORS. |
+| Cliente HTTP | `src/services/api.ts`: único punto de llamadas; normaliza errores a `ApiError` con mensaje amigable; ante 401 renueva una sola vez (promesa compartida) y reintenta. |
+| Sesión en el front | `src/stores/auth.ts`: token en memoria; al abrir la app se recupera con `/auth/refresh`; si la sesión se pierde trabajando, vuelve al login con `?volver=` (solo rutas internas). |
+| Guardas | `meta.publica` y `meta.roles` en las rutas; primer acceso obliga a `/cambiar-contrasena`; rol sin permiso → página 403 dentro del layout. |
+| Pruebas | `scripts/prueba-integracion.sh`: SPA, CSP, IP real detrás de nginx, cookie, sesión completa y limpieza de datos de prueba. |

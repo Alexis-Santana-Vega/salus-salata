@@ -46,15 +46,15 @@
   import AppMarca from '@/components/AppMarca.vue'
   import { menu } from '@/config/menu'
   import { useAppStore } from '@/stores/app'
+  import { useAuthStore } from '@/stores/auth'
 
   const app = useAppStore()
 
-  // Rol fijo hasta la integración con la API (paso 0.6).
-  const rol = 'SYSADMIN'
+  const auth = useAuthStore()
 
   const secciones = computed(() =>
     menu
-      .map(s => ({ ...s, opciones: s.opciones.filter(o => !o.roles || o.roles.includes(rol)) }))
+      .map(s => ({ ...s, opciones: s.opciones.filter(o => auth.tieneRol(o.roles)) }))
       .filter(s => s.opciones.length > 0),
   )
 </script>

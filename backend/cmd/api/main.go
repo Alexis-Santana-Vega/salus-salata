@@ -30,7 +30,7 @@ import (
 var banner string
 
 // version se puede fijar al compilar: -ldflags "-X main.version=1.2.3".
-var version = "0.4.0-dev"
+var version = "0.6.0-dev"
 
 // main solo decide el modo: chequeo de salud para Docker o servidor normal.
 func main() {
@@ -94,6 +94,12 @@ func run() error {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  30 * time.Second,
+		// Detrás de nginx la IP real llega en X-Real-IP. Solo se lee si la
+		// petición viene de un proxy de confianza; si no, se usa la IP directa
+		// (así nadie la falsifica mandando la cabecera).
+		TrustProxy:       len(cfg.TrustedProxies) > 0,
+		TrustProxyConfig: fiber.TrustProxyConfig{Proxies: cfg.TrustedProxies},
+		ProxyHeader:      "X-Real-IP",
 	})
 	middleware.Register(app, cfg, log)
 	router.Setup(app, router.Deps{

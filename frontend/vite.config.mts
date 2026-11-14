@@ -34,5 +34,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    // Mismo origen que en producción: Vite reenvía /api al backend local.
+    proxy: {
+      '/api': { target: 'http://localhost:8080', changeOrigin: false },
+    },
   },
 })

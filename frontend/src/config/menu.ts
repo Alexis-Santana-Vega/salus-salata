@@ -1,3 +1,5 @@
+import type { Rol } from '@/stores/auth'
+
 /**
  * Menú del sidebar. Una opción sola lleva directo a su página; una opción
  * con `hijos` se despliega con la página principal y sus altas.
@@ -7,7 +9,7 @@ export interface OpcionMenu {
   titulo: string
   icono: string
   to?: string
-  roles?: string[] // si se omite, la ven todos los roles con sesión
+  roles?: Rol[] // si se omite, la ven todos los roles con sesión
   hijos?: { titulo: string, to: string }[]
 }
 

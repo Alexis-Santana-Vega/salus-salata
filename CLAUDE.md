@@ -63,7 +63,7 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Fuentes: Poppins para títulos, Inter para texto.
 - **Antes de construir o ajustar una pantalla, leer su artboard del mock** (https://claude.ai/artifact/3VR1enc7SDGVFu464sF8xg, `project/<Pantalla>.dc.html`, y `Componentes.dc.html` para elementos de UI) y seguirlo: estructura, textos y jerarquía. No inventar diseño.
 - Componentes de UI del mock ya hechos: `PageHeader` (título + subtítulo + acciones), `AppMarca`, `ErrorPagina` (404/403/500/503). Reusarlos, no repetir su diseño a mano.
-- **Sin espaciados manuales** (`pa-*`, `ma-*`, `mt-*`…): los dan el grid (`v-row`/`v-col`) y los componentes; si hay que cambiarlos, en la config global. Densidad `comfortable` global; `v-list` con `slim` y sin `nav`.
+- **Espaciado estandarizado** (detalle en `docs/09` › Espaciado): grid primero (`v-row` density comfortable / `v-col`); en `d-flex` solo `ga-2` (relacionados) o `ga-4` (grupos); `pa-4` solo en contenedores sin padding propio; **nunca márgenes** (`ma-*`, `mt-*`…). Densidad `comfortable` global; `v-list` con `slim` y sin `nav`.
 - Tipografía con las clases MD3 de Vuetify 4 (`text-headline-small`, `text-title-large`, `text-body-medium`, `text-label-large`…), no `text-h*`.
 - Páginas de error dentro del dashboard se pintan en el área de contenido, centradas (nunca reemplazan sidebar ni header).
 - Seguir `docs/05-guia-diseno.md`. Resumen: mobile first, Poppins, primario #0195B7 / secundario #4FB5AB, campos outlined, modo oscuro requerido, sin fondos negros, en pasteles el texto lleva el mismo tono más fuerte.

@@ -12,6 +12,19 @@
 </template>
 
 <script lang="ts" setup>
+  import { watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import AppDrawer from '@/components/AppDrawer.vue'
   import AppHeader from '@/components/AppHeader.vue'
+  import { useAuthStore } from '@/stores/auth'
+
+  const auth = useAuthStore()
+  const router = useRouter()
+  const route = useRoute()
+
+  // Si la sesión se pierde mientras se trabaja (refresh vencido o revocado),
+  // vuelve al login recordando dónde estaba.
+  watch(() => auth.autenticado, activo => {
+    if (!activo) router.replace({ path: '/login', query: { volver: route.fullPath } })
+  })
 </script>
