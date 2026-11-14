@@ -83,7 +83,7 @@ func (a *Auth) Login(ctx context.Context, ident, contrasena string, o model.Orig
 		return nil, err
 	}
 	if porIdent >= MaxFallidosPorCuenta || porIP >= MaxFallidosPorIP {
-		a.auditar(ctx, model.EventoLoginBloqueado, 0, ident, o)
+		a.auditar(ctx, model.EventoLoginBloqueado, model.ID{}, ident, o)
 		return nil, ErrDemasiadosIntentos
 	}
 
@@ -102,7 +102,7 @@ func (a *Auth) Login(ctx context.Context, ident, contrasena string, o model.Orig
 		return nil, fmt.Errorf("verificar contraseña: %w", err)
 	}
 	if u == nil || !ok || !u.Activo {
-		var uid int64
+		var uid model.ID
 		if u != nil {
 			uid = u.ID
 		}
@@ -110,27 +110,41 @@ func (a *Auth) Login(ctx context.Context, ident, contrasena string, o model.Orig
 		return nil, ErrCredenciales
 	}
 
-	// 3. Si los parámetros de argon2 cambiaron, se aprovecha para rehashear.
+	// 3. Lo lento (argon2, aleatorios) se calcula antes de abrir la transacción.
+	//    Si los parámetros de argon2 cambiaron, se aprovecha para rehashear.
+	var nuevoHash string
 	if security.NeedsRehash(u.HashContrasena) {
-		if nuevo, err := security.HashPassword(contrasena); err == nil {
-			_ = usuarios.CambiarHash(ctx, u.ID, nuevo, u.DebeCambiarContrasena, ahora)
+		if nuevoHash, err = security.HashPassword(contrasena); err != nil {
+			return nil, err
 		}
 	}
-
-	// 4. Abrir sesión nueva (familia nueva) y registrar el acceso.
 	familia, err := security.RandomHex(16)
 	if err != nil {
 		return nil, err
 	}
-	sesiones := repository.NewSesiones(a.db)
-	_ = sesiones.BorrarVencidas(ctx, u.ID, ahora)
-	s, err := a.emitir(ctx, sesiones, u, familia, o, ahora)
-	if err != nil {
-		return nil, err
-	}
-	_ = usuarios.RegistrarAcceso(ctx, u.ID, ahora)
-	a.auditar(ctx, model.EventoLoginOK, u.ID, ident, o)
-	return s, nil
+
+	// 4. Sesión nueva, último acceso y auditoría: todo o nada.
+	var s *Sesion
+	err = enTx(ctx, a.db, func(tx *sql.Tx) error {
+		usuarios, sesiones := repository.NewUsuarios(tx), repository.NewSesiones(tx)
+		if nuevoHash != "" {
+			if err := usuarios.CambiarHash(ctx, u.ID, nuevoHash, u.DebeCambiarContrasena, ahora); err != nil {
+				return err
+			}
+		}
+		if err := sesiones.BorrarVencidas(ctx, u.ID, ahora); err != nil {
+			return err
+		}
+		var err error
+		if s, err = a.emitir(ctx, sesiones, u, familia, o, ahora); err != nil {
+			return err
+		}
+		if err := usuarios.RegistrarAcceso(ctx, u.ID, ahora); err != nil {
+			return err
+		}
+		return repository.NewAuditoria(tx).Registrar(ctx, model.EventoLoginOK, u.ID, ident, o, ahora)
+	})
+	return s, err
 }
 
 // Refresh rota el refresh token: el usado se revoca y se emite otro de la
@@ -142,50 +156,58 @@ func (a *Auth) Refresh(ctx context.Context, refresh string, o model.Origen) (*Se
 	}
 	ahora := a.ahora()
 
-	tx, err := a.db.BeginTx(ctx, nil)
+	// Leer, revocar y emitir en una sola transacción: si algo falla, el token
+	// usado sigue vigente y no queda una sesión a medias.
+	var s *Sesion
+	var reuso *model.Sesion
+	err := enTx(ctx, a.db, func(tx *sql.Tx) error {
+		sesiones := repository.NewSesiones(tx)
+		actual, err := sesiones.PorTokenHash(ctx, security.HashToken(refresh))
+		if errors.Is(err, repository.ErrNoEncontrado) {
+			return ErrSesionInvalida
+		}
+		if err != nil {
+			return err
+		}
+		if actual.RevocadaEn != nil {
+			reuso = actual
+			return ErrSesionInvalida
+		}
+		if !ahora.Before(actual.ExpiraEn) {
+			return ErrSesionInvalida
+		}
+		u, err := repository.NewUsuarios(tx).PorID(ctx, actual.UsuarioID)
+		if err != nil || !u.Activo {
+			return ErrSesionInvalida
+		}
+		// Revocar solo si sigue vigente: si otra petición lo rotó primero, esta pierde.
+		revocada, err := sesiones.Revocar(ctx, actual.ID, ahora)
+		if err != nil {
+			return err
+		}
+		if !revocada {
+			return ErrSesionInvalida
+		}
+		s, err = a.emitir(ctx, sesiones, u, actual.Familia, o, ahora)
+		return err
+	})
+
+	// Reuso detectado: alguien copió el token. Se cierra la familia completa
+	// y se audita, juntos, en su propia transacción.
+	if reuso != nil {
+		if errTx := enTx(ctx, a.db, func(tx *sql.Tx) error {
+			if err := repository.NewSesiones(tx).RevocarFamilia(ctx, reuso.Familia, ahora); err != nil {
+				return err
+			}
+			return repository.NewAuditoria(tx).Registrar(ctx, model.EventoRefreshReuso, reuso.UsuarioID, "", o, ahora)
+		}); errTx != nil {
+			a.log.Error("no se pudo revocar la familia reusada", "error", errTx)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = tx.Rollback() }()
-	sesiones := repository.NewSesiones(tx)
-
-	actual, err := sesiones.PorTokenHash(ctx, security.HashToken(refresh))
-	if errors.Is(err, repository.ErrNoEncontrado) {
-		return nil, ErrSesionInvalida
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if actual.RevocadaEn != nil {
-		// Reuso detectado: se revoca la familia fuera de esta transacción.
-		_ = tx.Rollback()
-		_ = repository.NewSesiones(a.db).RevocarFamilia(ctx, actual.Familia, ahora)
-		a.auditar(ctx, model.EventoRefreshReuso, actual.UsuarioID, "", o)
-		return nil, ErrSesionInvalida
-	}
-	if !ahora.Before(actual.ExpiraEn) {
-		return nil, ErrSesionInvalida
-	}
-
-	u, err := repository.NewUsuarios(tx).PorID(ctx, actual.UsuarioID)
-	if err != nil || !u.Activo {
-		return nil, ErrSesionInvalida
-	}
-
-	// Revocar solo si sigue vigente: si otra petición lo rotó primero, esta pierde.
-	revocada, err := sesiones.Revocar(ctx, actual.ID, ahora)
-	if err != nil {
-		return nil, err
-	}
-	if !revocada {
-		return nil, ErrSesionInvalida
-	}
-	s, err := a.emitir(ctx, sesiones, u, actual.Familia, o, ahora)
-	if err != nil {
-		return nil, err
-	}
-	return s, tx.Commit()
+	return s, nil
 }
 
 // Logout revoca la sesión del refresh token (si existe). Es idempotente.
@@ -193,24 +215,26 @@ func (a *Auth) Logout(ctx context.Context, refresh string, o model.Origen) error
 	if refresh == "" {
 		return nil
 	}
-	sesiones := repository.NewSesiones(a.db)
-	s, err := sesiones.PorTokenHash(ctx, security.HashToken(refresh))
-	if errors.Is(err, repository.ErrNoEncontrado) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	if _, err := sesiones.Revocar(ctx, s.ID, a.ahora()); err != nil {
-		return err
-	}
-	a.auditar(ctx, model.EventoLogout, s.UsuarioID, "", o)
-	return nil
+	ahora := a.ahora()
+	return enTx(ctx, a.db, func(tx *sql.Tx) error {
+		sesiones := repository.NewSesiones(tx)
+		s, err := sesiones.PorTokenHash(ctx, security.HashToken(refresh))
+		if errors.Is(err, repository.ErrNoEncontrado) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := sesiones.Revocar(ctx, s.ID, ahora); err != nil {
+			return err
+		}
+		return repository.NewAuditoria(tx).Registrar(ctx, model.EventoLogout, s.UsuarioID, "", o, ahora)
+	})
 }
 
 // CambiarContrasena verifica la actual, guarda la nueva, cierra todas las
 // sesiones del usuario y abre una nueva para el dispositivo actual.
-func (a *Auth) CambiarContrasena(ctx context.Context, usuarioID int64, actual, nueva string, o model.Origen) (*Sesion, error) {
+func (a *Auth) CambiarContrasena(ctx context.Context, usuarioID model.ID, actual, nueva string, o model.Origen) (*Sesion, error) {
 	ahora := a.ahora()
 	usuarios := repository.NewUsuarios(a.db)
 	u, err := usuarios.PorID(ctx, usuarioID)
@@ -250,28 +274,34 @@ func (a *Auth) CambiarContrasena(ctx context.Context, usuarioID int64, actual, n
 	if err != nil {
 		return nil, err
 	}
-	if err := usuarios.CambiarHash(ctx, u.ID, hash, false, ahora); err != nil {
-		return nil, err
-	}
-	sesiones := repository.NewSesiones(a.db)
-	if err := sesiones.RevocarDeUsuario(ctx, u.ID, ahora); err != nil {
-		return nil, err
-	}
-	u.DebeCambiarContrasena = false
 	familia, err := security.RandomHex(16)
 	if err != nil {
 		return nil, err
 	}
-	s, err := a.emitir(ctx, sesiones, u, familia, o, ahora)
-	if err != nil {
-		return nil, err
-	}
-	a.auditar(ctx, model.EventoCambioClave, u.ID, "", o)
-	return s, nil
+
+	// Contraseña nueva, cierre de sesiones, sesión nueva y auditoría: todo o
+	// nada (no puede quedar la contraseña cambiada con las sesiones viejas vivas).
+	var s *Sesion
+	err = enTx(ctx, a.db, func(tx *sql.Tx) error {
+		sesiones := repository.NewSesiones(tx)
+		if err := repository.NewUsuarios(tx).CambiarHash(ctx, u.ID, hash, false, ahora); err != nil {
+			return err
+		}
+		if err := sesiones.RevocarDeUsuario(ctx, u.ID, ahora); err != nil {
+			return err
+		}
+		u.DebeCambiarContrasena = false
+		var err error
+		if s, err = a.emitir(ctx, sesiones, u, familia, o, ahora); err != nil {
+			return err
+		}
+		return repository.NewAuditoria(tx).Registrar(ctx, model.EventoCambioClave, u.ID, "", o, ahora)
+	})
+	return s, err
 }
 
 // Usuario devuelve el usuario de la sesión actual.
-func (a *Auth) Usuario(ctx context.Context, id int64) (*model.Usuario, error) {
+func (a *Auth) Usuario(ctx context.Context, id model.ID) (*model.Usuario, error) {
 	u, err := repository.NewUsuarios(a.db).PorID(ctx, id)
 	if errors.Is(err, repository.ErrNoEncontrado) || (err == nil && !u.Activo) {
 		return nil, ErrSesionInvalida
@@ -304,7 +334,7 @@ func (a *Auth) emitir(ctx context.Context, sesiones *repository.Sesiones, u *mod
 
 // auditar registra el evento; si falla, solo se anota en el log para no
 // romper el acceso del usuario por un problema de bitácora.
-func (a *Auth) auditar(ctx context.Context, evento string, usuarioID int64, ident string, o model.Origen) {
+func (a *Auth) auditar(ctx context.Context, evento string, usuarioID model.ID, ident string, o model.Origen) {
 	if err := repository.NewAuditoria(a.db).Registrar(ctx, evento, usuarioID, ident, o, a.ahora()); err != nil {
 		a.log.Error("no se pudo auditar", "evento", evento, "error", err)
 	}

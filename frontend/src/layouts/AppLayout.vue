@@ -1,6 +1,7 @@
 <template>
   <app-drawer />
   <app-header />
+  <app-avisos />
 
   <v-main>
     <v-container class="fill-height align-start" fluid>
@@ -14,6 +15,7 @@
 <script lang="ts" setup>
   import { watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
+  import AppAvisos from '@/components/AppAvisos.vue'
   import AppDrawer from '@/components/AppDrawer.vue'
   import AppHeader from '@/components/AppHeader.vue'
   import { useAuthStore } from '@/stores/auth'

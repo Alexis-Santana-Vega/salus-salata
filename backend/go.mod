@@ -6,6 +6,7 @@ require (
 	github.com/go-playground/validator/v10 v10.30.6
 	github.com/gofiber/fiber/v3 v3.7.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/nakagami/firebirdsql v0.9.23
 	golang.org/x/crypto v0.58.0
@@ -17,7 +18,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.2 // indirect
 	github.com/gofiber/schema v1.9.3 // indirect
 	github.com/gofiber/utils/v2 v2.6.4 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect

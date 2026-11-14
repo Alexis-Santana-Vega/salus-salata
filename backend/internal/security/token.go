@@ -5,10 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
+	"salus/backend/internal/model"
 )
 
 const emisor = "salus-api"
@@ -22,8 +23,8 @@ type Claims struct {
 }
 
 // UsuarioID devuelve el id del usuario guardado en "sub".
-func (c Claims) UsuarioID() (int64, error) {
-	return strconv.ParseInt(c.Subject, 10, 64)
+func (c Claims) UsuarioID() (model.ID, error) {
+	return model.ParseID(c.Subject)
 }
 
 // Tokens firma y valida tokens de acceso (JWT HS256, vida corta).
@@ -39,7 +40,7 @@ func NewTokens(secreto string, vida time.Duration) *Tokens {
 func (t *Tokens) Vida() time.Duration { return t.vida }
 
 // Firmar emite un token de acceso para el usuario y rol dados.
-func (t *Tokens) Firmar(usuarioID int64, rol string, debeCambiar bool, ahora time.Time) (string, error) {
+func (t *Tokens) Firmar(usuarioID model.ID, rol string, debeCambiar bool, ahora time.Time) (string, error) {
 	jti, err := RandomHex(16)
 	if err != nil {
 		return "", err
@@ -49,7 +50,7 @@ func (t *Tokens) Firmar(usuarioID int64, rol string, debeCambiar bool, ahora tim
 		DebeCambiar: debeCambiar,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    emisor,
-			Subject:   strconv.FormatInt(usuarioID, 10),
+			Subject:   usuarioID.String(),
 			IssuedAt:  jwt.NewNumericDate(ahora),
 			ExpiresAt: jwt.NewNumericDate(ahora.Add(t.vida)),
 			ID:        jti,

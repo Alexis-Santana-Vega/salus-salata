@@ -38,7 +38,7 @@ sql() { docker compose exec -T db sh -c 'isql -q -user "$FIREBIRD_USER" -passwor
 # Usuario temporal para ver la cookie de una sesión real.
 PASS="Prod-$(head -c 12 /dev/urandom | base64 | tr -d '/+=')"
 HASH=$(printf '%s\n' "$PASS" | (cd backend && PATH="$PATH:/c/Program Files/Go/bin" go run ./cmd/hash))
-printf "INSERT INTO USUARIO (USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO, DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN) VALUES ('prueba-prod', 'prueba-prod@salus.local', 'Prueba Prod', '%s', 3, TRUE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nCOMMIT;\n" "$HASH" | sql
+printf "INSERT INTO USUARIO (ID, USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO, DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN) VALUES (GEN_UUID(), 'prueba-prod', 'prueba-prod@salus.local', 'Prueba Prod', '%s', (SELECT ID FROM ROL WHERE CLAVE = 'DOCTOR'), TRUE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nCOMMIT;\n" "$HASH" | sql
 curl -sk -D "$T/h" -o /dev/null -H 'Content-Type: application/json' -d "{\"usuario\":\"prueba-prod\",\"contrasena\":\"$PASS\"}" $S/api/v1/auth/login
 probar "cookie de sesión con Secure + HttpOnly + SameSite=Strict" 1 "$(grep -i '^set-cookie: salus_refresh' "$T/h" | grep -i 'secure' | grep -i 'httponly' | grep -ci 'samesite=strict')"
 

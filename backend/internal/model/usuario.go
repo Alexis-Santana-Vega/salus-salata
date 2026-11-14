@@ -12,7 +12,7 @@ const (
 )
 
 type Usuario struct {
-	ID                    int64      `json:"id"`
+	ID                    ID         `json:"id"`
 	Usuario               string     `json:"usuario"`
 	Correo                string     `json:"correo"`
 	Nombre                string     `json:"nombre"`
@@ -26,8 +26,8 @@ type Usuario struct {
 
 // Sesion es un refresh token emitido a un dispositivo.
 type Sesion struct {
-	ID         int64
-	UsuarioID  int64
+	ID         ID
+	UsuarioID  ID
 	Familia    string
 	TokenHash  string
 	CreadaEn   time.Time

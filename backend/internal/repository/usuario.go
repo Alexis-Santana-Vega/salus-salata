@@ -57,7 +57,7 @@ func (r *Usuarios) PorIdentificador(ctx context.Context, ident string) (*model.U
 		selectUsuario+` WHERE U.USUARIO = ? OR U.CORREO = ?`, ident, ident))
 }
 
-func (r *Usuarios) PorID(ctx context.Context, id int64) (*model.Usuario, error) {
+func (r *Usuarios) PorID(ctx context.Context, id model.ID) (*model.Usuario, error) {
 	return scanUsuario(r.db.QueryRowContext(ctx, selectUsuario+` WHERE U.ID = ?`, id))
 }
 
@@ -95,27 +95,26 @@ func (r *Usuarios) HaySysadminActivo(ctx context.Context) (bool, error) {
 	return n > 0, err
 }
 
-// Crear inserta el usuario y devuelve su id (RETURNING de Firebird).
-func (r *Usuarios) Crear(ctx context.Context, u model.Usuario, ahora time.Time) (int64, error) {
-	var id int64
-	err := r.db.QueryRowContext(ctx, `
-		INSERT INTO USUARIO (USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO,
+// Crear inserta el usuario con un id nuevo y lo devuelve.
+func (r *Usuarios) Crear(ctx context.Context, u model.Usuario, ahora time.Time) (model.ID, error) {
+	id := model.NuevoID()
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO USUARIO (ID, USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO,
 		                     DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN)
-		VALUES (?, ?, ?, ?, (SELECT ID FROM ROL WHERE CLAVE = ?), ?, ?, ?, ?)
-		RETURNING ID`,
-		u.Usuario, u.Correo, u.Nombre, u.HashContrasena, u.Rol, u.Activo,
-		u.DebeCambiarContrasena, ahora, ahora).Scan(&id)
+		VALUES (?, ?, ?, ?, ?, (SELECT ID FROM ROL WHERE CLAVE = ?), ?, ?, ?, ?)`,
+		id, u.Usuario, u.Correo, u.Nombre, u.HashContrasena, u.Rol, u.Activo,
+		u.DebeCambiarContrasena, ahora, ahora)
 	return id, err
 }
 
-func (r *Usuarios) RegistrarAcceso(ctx context.Context, id int64, ahora time.Time) error {
+func (r *Usuarios) RegistrarAcceso(ctx context.Context, id model.ID, ahora time.Time) error {
 	_, err := r.db.ExecContext(ctx, `UPDATE USUARIO SET ULTIMO_ACCESO = ? WHERE ID = ?`, ahora, id)
 	return err
 }
 
 // CambiarHash guarda un hash nuevo (cambio de contraseña o rehash por
 // parámetros nuevos) y fija si debe cambiarla en el siguiente acceso.
-func (r *Usuarios) CambiarHash(ctx context.Context, id int64, hash string, debeCambiar bool, ahora time.Time) error {
+func (r *Usuarios) CambiarHash(ctx context.Context, id model.ID, hash string, debeCambiar bool, ahora time.Time) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE USUARIO SET HASH_CONTRASENA = ?, DEBE_CAMBIAR_CONTRASENA = ?, ACTUALIZADO_EN = ?
 		WHERE ID = ?`, hash, debeCambiar, ahora, id)

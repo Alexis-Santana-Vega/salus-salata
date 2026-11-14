@@ -23,7 +23,7 @@ b64url() { base64 -w0 | tr '+/' '-_' | tr -d '='; }
 # Usuario temporal con contraseña aleatoria (no se imprime).
 PASS="Seg-$(head -c 12 /dev/urandom | base64 | tr -d '/+=')"
 HASH=$(printf '%s\n' "$PASS" | (cd backend && PATH="$PATH:/c/Program Files/Go/bin" go run ./cmd/hash))
-printf "INSERT INTO USUARIO (USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO, DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN) VALUES ('atacante', 'atacante@salus.local', 'Prueba Seguridad', '%s', 3, TRUE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nCOMMIT;\n" "$HASH" | sql
+printf "INSERT INTO USUARIO (ID, USUARIO, CORREO, NOMBRE, HASH_CONTRASENA, ROL_ID, ACTIVO, DEBE_CAMBIAR_CONTRASENA, CREADO_EN, ACTUALIZADO_EN) VALUES (GEN_UUID(), 'atacante', 'atacante@salus.local', 'Prueba Seguridad', '%s', (SELECT ID FROM ROL WHERE CLAVE = 'DOCTOR'), TRUE, FALSE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);\nCOMMIT;\n" "$HASH" | sql
 
 echo "1. Inyección SQL y validación de entrada"
 probar "SQLi ' OR '1'='1 en usuario → credenciales inválidas" INVALID_CREDENTIALS "$(cod -H "$J" -d "{\"usuario\":\"' OR '1'='1\",\"contrasena\":\"' OR '1'='1\"}" $A/auth/login >/dev/null; codigo)"

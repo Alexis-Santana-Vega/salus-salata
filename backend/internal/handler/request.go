@@ -24,6 +24,10 @@ var validate = func() *validator.Validate {
 		}
 		return nombre
 	})
+	// "texto": texto libre sin etiquetas HTML (misma regla que textoSeguro del front).
+	_ = v.RegisterValidation("texto", func(fl validator.FieldLevel) bool {
+		return !strings.ContainsAny(fl.Field().String(), "<>")
+	})
 	return v
 }()
 
@@ -59,6 +63,10 @@ func mensaje(fe validator.FieldError) string {
 		return "Usa al menos " + fe.Param() + " caracteres"
 	case "max":
 		return "Usa como máximo " + fe.Param() + " caracteres"
+	case "texto":
+		return "No uses los caracteres < ni >"
+	case "oneof":
+		return "Elige una opción de la lista"
 	}
 	return "Valor no válido"
 }

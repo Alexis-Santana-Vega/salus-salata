@@ -32,8 +32,7 @@ type SysadminInicial struct {
 // Queda marcado para cambiar la contraseña en su primer acceso. La
 // contraseña nunca se escribe en el log.
 func (s *Usuarios) AsegurarSysadmin(ctx context.Context, ini SysadminInicial) error {
-	repo := repository.NewUsuarios(s.db)
-	hay, err := repo.HaySysadminActivo(ctx)
+	hay, err := repository.NewUsuarios(s.db).HaySysadminActivo(ctx)
 	if err != nil || hay {
 		return err
 	}
@@ -48,11 +47,24 @@ func (s *Usuarios) AsegurarSysadmin(ctx context.Context, ini SysadminInicial) er
 	if err != nil {
 		return err
 	}
-	_, err = repo.Crear(ctx, model.Usuario{
-		Usuario: Normalizar(ini.Usuario), Correo: Normalizar(ini.Correo), Nombre: ini.Nombre,
-		HashContrasena: hash, Rol: model.RolSysadmin, Activo: true, DebeCambiarContrasena: true,
-	}, time.Now().UTC())
-	if err == nil {
+
+	// Se vuelve a comprobar dentro de la transacción: dos arranques a la vez
+	// no crean dos Sysadmin (el segundo choca con el UNIQUE y se revierte).
+	creado := false
+	err = enTx(ctx, s.db, func(tx *sql.Tx) error {
+		repo := repository.NewUsuarios(tx)
+		hay, err := repo.HaySysadminActivo(ctx)
+		if err != nil || hay {
+			return err
+		}
+		_, err = repo.Crear(ctx, model.Usuario{
+			Usuario: Normalizar(ini.Usuario), Correo: Normalizar(ini.Correo), Nombre: ini.Nombre,
+			HashContrasena: hash, Rol: model.RolSysadmin, Activo: true, DebeCambiarContrasena: true,
+		}, time.Now().UTC())
+		creado = err == nil
+		return err
+	})
+	if creado {
 		s.log.Info("Sysadmin inicial creado; debe cambiar su contraseña al entrar", "usuario", Normalizar(ini.Usuario))
 	}
 	return err

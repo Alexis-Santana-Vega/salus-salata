@@ -26,6 +26,20 @@ export const menu: SeccionMenu[] = [
     ],
   },
   {
+    titulo: 'Administración',
+    opciones: [
+      {
+        titulo: 'Catálogos',
+        icono: '$catalogos',
+        roles: ['SYSADMIN', 'ADMIN'],
+        hijos: [
+          { titulo: 'Catálogos', to: '/catalogos/procedimientos' },
+          { titulo: 'Alta de procedimiento', to: '/catalogos/procedimientos/alta' },
+        ],
+      },
+    ],
+  },
+  {
     titulo: 'Sistema',
     opciones: [
       {

@@ -48,6 +48,7 @@ interface Opciones {
   metodo?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   cuerpo?: unknown
   sinRenovar?: boolean // para /auth/*: no reintentar con refresh
+  completa?: boolean // devuelve {data, meta} en lugar de solo data (listados)
 }
 
 export async function api<T> (ruta: string, op: Opciones = {}): Promise<T> {
@@ -86,7 +87,7 @@ export async function api<T> (ruta: string, op: Opciones = {}): Promise<T> {
     const e = json?.error ?? {}
     throw new ApiError(res.status, e.code ?? 'INTERNAL_ERROR', mensajeAmigable(e.code, e.message), e.details ?? [])
   }
-  return json?.data as T
+  return (op.completa ? json : json?.data) as T
 }
 
 /**
@@ -121,4 +122,12 @@ function mensajeAmigable (code?: string, delServidor?: string): string {
       return 'Algo salió mal. Intenta de nuevo en unos minutos.'
     }
   }
+}
+
+// Listados: misma forma en toda la API ({data, meta}).
+export interface Meta { page: number, pageSize: number, total: number }
+export interface Pagina<T> { data: T[], meta: Meta }
+
+export function apiPagina<T> (ruta: string): Promise<Pagina<T>> {
+  return api<Pagina<T>>(ruta, { completa: true })
 }

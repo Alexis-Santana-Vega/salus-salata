@@ -10,7 +10,7 @@ import { api, configurarApi } from '@/services/api'
 export type Rol = 'SYSADMIN' | 'ADMIN' | 'DOCTOR'
 
 export interface Usuario {
-  id: number
+  id: string
   usuario: string
   correo: string
   nombre: string

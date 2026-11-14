@@ -23,6 +23,8 @@ type Deps struct {
 	Tokens   *security.Tokens
 	Auth     *service.Auth
 	Usuarios *service.Usuarios
+
+	Procedimientos *service.Procedimientos
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -50,8 +52,33 @@ func Setup(app *fiber.App, d Deps) {
 	usuarios := handler.UsuariosHandler{Svc: d.Usuarios}
 	v1.Get("/usuarios", sesion, middleware.RequireRole(model.RolSysadmin), usuarios.Listar)
 
+	// --- Catálogos (Sysadmin y Admin) ---
+	// Cada catálogo es un grupo con su propia sesión y rol: así una ruta
+	// inexistente sigue respondiendo 404 y no 401.
+	admin := []any{sesion, middleware.RequireRole(model.RolSysadmin, model.RolAdmin)}
+	crud(v1, "/procedimientos", admin, handler.ProcedimientosHandler{Svc: d.Procedimientos})
+
 	// Cualquier otra ruta responde 404 con el formato único.
 	app.Use(func(c fiber.Ctx) error {
 		return response.NotFound("La ruta " + c.Method() + " " + c.Path() + " no existe")
 	})
+}
+
+// Recurso es lo que implementa cada catálogo con baja lógica.
+type recurso interface {
+	Listar(fiber.Ctx) error
+	Obtener(fiber.Ctx) error
+	Crear(fiber.Ctx) error
+	Actualizar(fiber.Ctx) error
+	Baja(fiber.Ctx) error
+}
+
+// crud registra las cinco rutas estándar de un catálogo bajo su grupo.
+func crud(r fiber.Router, ruta string, mw []any, h recurso) {
+	g := r.Group(ruta, mw...)
+	g.Get("", h.Listar)
+	g.Post("", h.Crear)
+	g.Get("/:id", h.Obtener)
+	g.Put("/:id", h.Actualizar)
+	g.Delete("/:id", h.Baja)
 }

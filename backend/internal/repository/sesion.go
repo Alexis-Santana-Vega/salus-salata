@@ -16,9 +16,9 @@ func NewSesiones(db DBTX) *Sesiones { return &Sesiones{db: db} }
 
 func (r *Sesiones) Crear(ctx context.Context, s model.Sesion, o model.Origen) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO SESION (USUARIO_ID, FAMILIA, TOKEN_HASH, CREADA_EN, EXPIRA_EN, IP, USER_AGENT)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		s.UsuarioID, s.Familia, s.TokenHash, s.CreadaEn, s.ExpiraEn, recortar(o.IP, 45), recortar(o.UserAgent, 255))
+		INSERT INTO SESION (ID, USUARIO_ID, FAMILIA, TOKEN_HASH, CREADA_EN, EXPIRA_EN, IP, USER_AGENT)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		model.NuevoID(), s.UsuarioID, s.Familia, s.TokenHash, s.CreadaEn, s.ExpiraEn, recortar(o.IP, 45), recortar(o.UserAgent, 255))
 	return err
 }
 
@@ -44,7 +44,7 @@ func (r *Sesiones) PorTokenHash(ctx context.Context, hash string) (*model.Sesion
 
 // Revocar marca la sesión como usada/cerrada. Devuelve false si ya estaba
 // revocada: así dos peticiones simultáneas con el mismo token no pasan ambas.
-func (r *Sesiones) Revocar(ctx context.Context, id int64, ahora time.Time) (bool, error) {
+func (r *Sesiones) Revocar(ctx context.Context, id model.ID, ahora time.Time) (bool, error) {
 	res, err := r.db.ExecContext(ctx,
 		`UPDATE SESION SET REVOCADA_EN = ? WHERE ID = ? AND REVOCADA_EN IS NULL`, ahora, id)
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *Sesiones) RevocarFamilia(ctx context.Context, familia string, ahora tim
 }
 
 // RevocarDeUsuario cierra todas las sesiones abiertas del usuario.
-func (r *Sesiones) RevocarDeUsuario(ctx context.Context, usuarioID int64, ahora time.Time) error {
+func (r *Sesiones) RevocarDeUsuario(ctx context.Context, usuarioID model.ID, ahora time.Time) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE SESION SET REVOCADA_EN = ? WHERE USUARIO_ID = ? AND REVOCADA_EN IS NULL`, ahora, usuarioID)
 	return err
@@ -70,7 +70,7 @@ func (r *Sesiones) RevocarDeUsuario(ctx context.Context, usuarioID int64, ahora 
 
 // BorrarVencidas limpia las sesiones del usuario que ya no sirven (se llama
 // al iniciar sesión; no hace falta un proceso en segundo plano).
-func (r *Sesiones) BorrarVencidas(ctx context.Context, usuarioID int64, ahora time.Time) error {
+func (r *Sesiones) BorrarVencidas(ctx context.Context, usuarioID model.ID, ahora time.Time) error {
 	_, err := r.db.ExecContext(ctx,
 		`DELETE FROM SESION WHERE USUARIO_ID = ? AND EXPIRA_EN < ?`, usuarioID, ahora)
 	return err

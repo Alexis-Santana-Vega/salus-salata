@@ -105,6 +105,7 @@ func run() error {
 	router.Setup(app, router.Deps{
 		Config: cfg, DB: db, Version: version,
 		Tokens: tokens, Auth: authSvc, Usuarios: usuariosSvc,
+		Procedimientos: service.NewProcedimientos(db),
 	})
 
 	// Única gorutina: Listen bloquea, así que corre aparte y avisa por errCh

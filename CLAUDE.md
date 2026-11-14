@@ -40,6 +40,8 @@ Cliente de base de datos del usuario: **DBeaver** (pruebas: `127.0.0.1:3050`, ba
 - Estructura idiomática y simple: `cmd/api` + `internal/` con `config`, `database`, `model`, `repository`, `service`, `handler`, `router`, `middleware`. **Sin sobreingeniería**: nada de capas o interfaces que no se usen.
 - Secretos y configuración por variables de entorno; `.env` nunca se sube (solo `.env.example`).
 - SQL parametrizado siempre.
+- **Transacciones**: si una operación escribe en más de un paso o lee para escribir, va completa en `service.enTx` (todo o nada). Llaves foráneas siempre declaradas; nada de datos a medias ni huérfanos.
+- **IDs**: UUID v7 (`model.ID`, `BINARY(16)`) en todas las tablas; nunca `BIGINT IDENTITY`.
 - Respuestas solo con `internal/response` (`OK`, `Created`, `List`, `NoContent` y los errores `*response.Error`); nunca `c.JSON` con formas propias.
 - Migraciones en `internal/database/migrations/NNNN_descripcion.sql`; una migración aplicada **no se edita**, se crea otra.
 - Logs con `slog`; nunca registrar contraseñas, tokens, cookies ni cuerpos de petición.
@@ -73,7 +75,7 @@ Cliente de base de datos del usuario: **DBeaver** (pruebas: `127.0.0.1:3050`, ba
 - **Transiciones de Vuetify** (`v-fade-transition`, `v-expand-transition`, etc.) cuando algo aparece o desaparece; sin animaciones CSS propias.
 - Fuentes: Poppins para títulos, Inter para texto.
 - **Antes de construir o ajustar una pantalla, leer su artboard del mock** (https://claude.ai/artifact/3VR1enc7SDGVFu464sF8xg, `project/<Pantalla>.dc.html`, y `Componentes.dc.html` para elementos de UI) y seguirlo: estructura, textos y jerarquía. No inventar diseño.
-- Componentes ya hechos: `PageHeader` (título + subtítulo + acciones), `AppMarca` (solo el logo, cambia con el tema; sin el nombre al lado), `ErrorPagina` (404/403/500/503), `CampoContrasena` (con ojo), `AnimacionLottie`, `AuthLayout` (login y cambio de contraseña). Reusarlos, no repetir su diseño a mano.
+- Componentes ya hechos: `PageHeader` (título + subtítulo + acciones), `AppMarca` (solo el logo, cambia con el tema; sin el nombre al lado), `ErrorPagina` (404/403/500/503), `CampoContrasena` (con ojo), `AnimacionLottie`, `AuthLayout` (login y cambio de contraseña), y el patrón CRUD: `ListadoCrud`, `FormularioCrud`, `SeccionFormulario`, `FormActions`, `DialogoEliminar`, `AppAvisos` con los composables `useListado`, `useFormulario`, `useBaja` (ver `docs/09` › Patrón CRUD). Reusarlos, no repetir su diseño a mano.
 - **Formularios**: la alerta de error arriba de los campos es `alerta-formulario` (alias con `mb-5`): es la **única excepción a la regla de márgenes**, porque los campos reservan abajo el espacio de sus mensajes y sin ese margen la alerta queda pegada al primer campo.
 - **Espaciado estandarizado** (detalle en `docs/09` › Espaciado): grid primero (`v-row` density comfortable / `v-col`); en `d-flex` solo `ga-2` (relacionados) o `ga-4` (grupos); `pa-4` solo en contenedores sin padding propio; **nunca márgenes** (`ma-*`, `mt-*`…). Densidad `comfortable` global; `v-list` con `slim` y sin `nav`.
 - Tipografía con las clases MD3 de Vuetify 4 (`text-headline-small`, `text-title-large`, `text-body-medium`, `text-label-large`…), no `text-h*`.

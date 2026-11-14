@@ -8,11 +8,12 @@
 import type { IconAliases, IconSet } from 'vuetify'
 import {
   AlertCircle, AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown,
-  Calendar, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft,
-  ChevronsRight, ChevronUp, Circle, CircleDot, Clock, Command, CornerDownLeft, Delete,
-  Eye, EyeOff, File, Info, LayoutDashboard, Loader2, LogOut, Menu, Minus, Moon, Pencil,
-  Pipette, Plus, Search, Square, SquareCheck, SquareMinus, Star, StarHalf, Sun, Tag,
-  Trash2, Upload, User, UserPlus, Users, X, XCircle,
+  BookOpen, Calendar, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight,
+  ChevronsLeft, ChevronsRight, ChevronUp, Circle, CircleDot, ClipboardList, Clock, Command,
+  CornerDownLeft, Delete, Eye, EyeOff, File, Info, LayoutDashboard, Loader2, LogOut, Menu, Minus,
+  Moon, Pencil, Pipette, Plus, Search, SearchX, Square, SquareCheck, SquareMinus, Star,
+  StarHalf, Sun, Tag, Trash2, Upload, User, UserPlus,
+  Users, WifiOff, X, XCircle,
 } from 'lucide-vue-next'
 import { type Component, defineComponent, h, mergeProps } from 'vue'
 
@@ -29,6 +30,15 @@ const registro: Record<string, Component> = {
   salir: LogOut,
   ver: Eye,
   ocultar: EyeOff,
+  catalogos: BookOpen,
+  agregar: Plus,
+  editar: Pencil,
+  eliminar: Trash2,
+  abrir: ChevronRight,
+  limpiar: X,
+  vacio: ClipboardList,
+  sinResultados: SearchX,
+  sinConexion: WifiOff,
   // Internos de Vuetify (botones de cerrar, checkboxes, paginación, etc.)
   collapse: ChevronUp, complete: Check, cancel: XCircle, close: X, delete: Trash2,
   clear: XCircle, success: CheckCircle2, info: Info, warning: AlertTriangle, error: AlertCircle,

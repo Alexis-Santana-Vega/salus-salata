@@ -88,6 +88,7 @@ export default createVuetify({
     BtnIcono: VBtn, // solo icono, sin borde ni fondo
     CampoBusqueda: VTextField, // buscador junto a tablas y en el header
     AlertaFormulario: VAlert, // alerta arriba de los campos de un formulario
+    BtnPeligro: VBtn, // única excepción al primario: confirmar una baja (rojo sólido)
   },
 
   // Estilo por defecto de cada componente. Aquí viven las decisiones de diseño.
@@ -99,6 +100,7 @@ export default createVuetify({
     VBtn: { variant: 'text', color: 'primary', rounded: 'lg' },
     BtnPrimario: { variant: 'elevated', color: 'primary', elevation: 2, rounded: 'lg' },
     BtnIcono: { variant: 'text', icon: true, color: 'text-secondary', rounded: 'lg' },
+    BtnPeligro: { variant: 'elevated', color: 'error', elevation: 2, rounded: 'lg' },
 
     // Campos: siempre outlined con la etiqueta en el borde.
     VTextField: { variant: 'outlined', color: 'primary', rounded: 'lg' },
@@ -122,6 +124,14 @@ export default createVuetify({
     VChip: { variant: 'tonal', rounded: 'lg', size: 'small' },
     VSnackbar: { color: 'surface', elevation: 3, rounded: 'lg', location: 'top right', timeout: 4000 },
     VDialog: { maxWidth: 560 },
+
+    // Catálogos: tabla, estados vacíos, migas y paginación móvil.
+    VDataTableServer: { hover: true, itemsPerPageOptions: [10, 20, 50, 100], itemsPerPageText: 'Filas por página', firstIcon: '$first', lastIcon: '$last', showCurrentPage: false },
+    VEmptyState: { color: 'brand', size: 72, textWidth: 360 },
+    VBreadcrumbs: { density: 'compact', color: 'primary', class: 'px-0' },
+    VPagination: { density: 'comfortable', rounded: 'lg', activeColor: 'primary' },
+    VFooter: { color: 'surface' },
+    VSnackbarQueue: { color: 'surface', elevation: 3, rounded: 'lg', location: 'top right', timeout: 4000 },
     VAvatar: { rounded: 'lg' },
     VMenu: { offset: 8 },
 

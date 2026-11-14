@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"salus/backend/internal/model"
@@ -12,16 +11,12 @@ type Auditoria struct{ db DBTX }
 
 func NewAuditoria(db DBTX) *Auditoria { return &Auditoria{db: db} }
 
-// Registrar guarda un evento de acceso. usuarioID es 0 si no se conoce.
-func (r *Auditoria) Registrar(ctx context.Context, evento string, usuarioID int64, ident string, o model.Origen, ahora time.Time) error {
-	var uid sql.NullInt64
-	if usuarioID > 0 {
-		uid = sql.NullInt64{Int64: usuarioID, Valid: true}
-	}
+// Registrar guarda un evento de acceso. usuarioID va en cero si no se conoce (queda NULL).
+func (r *Auditoria) Registrar(ctx context.Context, evento string, usuarioID model.ID, ident string, o model.Origen, ahora time.Time) error {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO AUDITORIA_ACCESO (FECHA, EVENTO, USUARIO_ID, IDENTIFICADOR, IP, USER_AGENT)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		ahora, evento, uid, recortar(ident, 254), recortar(o.IP, 45), recortar(o.UserAgent, 255))
+		INSERT INTO AUDITORIA_ACCESO (ID, FECHA, EVENTO, USUARIO_ID, IDENTIFICADOR, IP, USER_AGENT)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		model.NuevoID(), ahora, evento, usuarioID, recortar(ident, 254), recortar(o.IP, 45), recortar(o.UserAgent, 255))
 	return err
 }
 

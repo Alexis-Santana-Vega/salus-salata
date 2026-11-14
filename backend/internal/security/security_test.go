@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"salus/backend/internal/model"
 )
 
 func TestPassword(t *testing.T) {
@@ -31,7 +33,8 @@ func TestPassword(t *testing.T) {
 
 func TestTokens(t *testing.T) {
 	tk := NewTokens(strings.Repeat("k", 32), time.Minute)
-	raw, err := tk.Firmar(7, "ADMIN", false, time.Now())
+	uid := model.NuevoID()
+	raw, err := tk.Firmar(uid, "ADMIN", false, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +42,7 @@ func TestTokens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if id, _ := c.UsuarioID(); id != 7 || c.Rol != "ADMIN" {
+	if id, _ := c.UsuarioID(); id != uid || c.Rol != "ADMIN" {
 		t.Fatalf("claims incorrectos: %+v", c)
 	}
 
@@ -47,7 +50,7 @@ func TestTokens(t *testing.T) {
 	if _, err := NewTokens(strings.Repeat("x", 32), time.Minute).Validar(raw); err == nil {
 		t.Fatal("validó con otro secreto")
 	}
-	viejo, _ := tk.Firmar(7, "ADMIN", false, time.Now().Add(-time.Hour))
+	viejo, _ := tk.Firmar(uid, "ADMIN", false, time.Now().Add(-time.Hour))
 	if _, err := tk.Validar(viejo); err == nil {
 		t.Fatal("validó un token vencido")
 	}

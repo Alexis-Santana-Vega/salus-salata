@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 
+	"salus/backend/internal/model"
 	"salus/backend/internal/response"
 	"salus/backend/internal/security"
 )
@@ -14,7 +15,7 @@ const claveSesion = "sesion"
 
 // SesionActual es lo que los handlers saben del usuario autenticado.
 type SesionActual struct {
-	UsuarioID   int64
+	UsuarioID   model.ID
 	Rol         string
 	DebeCambiar bool
 }

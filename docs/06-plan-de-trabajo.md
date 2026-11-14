@@ -36,6 +36,35 @@ Cada paso se entrega y se revisa antes de seguir.
 
 **Listo cuando:** puedo capturar el catálogo real del Excel a mano y consultarlo desde el celular.
 
+| Paso | Qué entrega | Listo cuando |
+|---|---|---|
+| **1.0 IDs UUID y transacciones** ✅ | Esquema de Fase 0 rehecho con UUID v7; escrituras de varios pasos (login, refresh, logout, cambio de contraseña, Sysadmin inicial) en una sola transacción | Login, refresh, integración y seguridad pasan igual que antes |
+| **1.1 Patrón CRUD + Procedimientos** ✅ | Piezas reutilizables en back (listado con `q`/`sort`, baja lógica, 409 por duplicado) y front (listado tabla/tarjetas, formulario por secciones, acciones, diálogo de baja, estado vacío, toast). Primer catálogo: Procedimientos | Alta, edición, baja, búsqueda y orden en móvil y web; Doctor recibe 403 |
+| 1.2 Técnicos | Puesto como lista cerrada | Se hace copiando el patrón |
+| 1.3 Doctores | Número único, correo y dirección desglosada | — |
+| 1.4 Hospitales + contactos | Primer registro con detalle hijo; misma dirección desglosada | Agregar y quitar contactos |
+| 1.5 Insumos + `CLAVE_CATALOGO` | Clave y código de barras únicos, stock ≥ 0 y mínimo | Una clave de insumo no puede repetir una de equipo |
+| 1.6 Equipo + tarifa | Modelo con purga opcional y tarifa con vigencia | Cambiar el costo deja historial |
+| 1.7 Unidades de equipo | Unidades en el alta y en un equipo existente, clave `EQ-001-01` automática | — |
+| 1.8 Cierre | Captura real del Excel en pruebas, revisión móvil, pruebas y docs | Criterio de la fase |
+
+**Deuda técnica (campos del mock que no entran en la Fase 1):**
+
+| Campo del mock | Dónde | Entra en |
+|---|---|---|
+| Duración típica (horas) | Procedimiento | Fase 2 (precarga el horario al programar) |
+| Plantilla base | Procedimiento | Fase 9 (plantillas y kits) |
+| Descripción | Procedimiento | Fase 9 (junto con la plantilla) |
+| Correo | Técnico | Fase 6 (contacto del personal en el seguimiento del doctor) |
+| Hospitales donde opera | Doctor | Fase 2 (sugerir hospital al programar) |
+| Acceso al portal | Doctor | Fase 6 (usuarios y portal Doctor) |
+| Foto | Hospital | Fase 9 (ficha de hospital completa) |
+| Proveedor | Equipo e insumo | Fase 7 (CRUD de proveedores) |
+| Accesorios | Equipo | Fase 9 (kits) |
+| Notas | Equipo | Fase 4 (ficha de equipo) |
+| Tipo de material y notas | Insumo | Fase 7 (ficha de insumo e inventario) |
+| Escanear series | Unidades de equipo | Fase 8 (lector de códigos) |
+
 ### Fase 2 · Programar cirugías + disponibilidad
 **Entrega:** el dolor principal resuelto — saber qué está libre y apartarlo.
 - Alta de cirugía: folio `CIR-###-AA`, procedimiento, hospital, doctor, personal, fecha/horas, **entrega y devolución**.

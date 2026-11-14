@@ -1,6 +1,7 @@
 <!-- Logo de la marca. Cambia con el tema (claro/oscuro). Solo el ícono, sin el nombre. -->
 <template>
-  <v-img alt="Salus Salata" :src="logo" :width="tamano" />
+  <!-- flex-grow-0: dentro de un d-flex, v-img crece por defecto e ignora el ancho. -->
+  <v-img alt="Salus Salata" class="flex-grow-0" :src="logo" :width="tamano" />
 </template>
 
 <script lang="ts" setup>

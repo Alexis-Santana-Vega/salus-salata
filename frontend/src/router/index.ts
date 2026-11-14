@@ -12,6 +12,9 @@ declare module 'vue-router' {
   }
 }
 
+// Roles que administran catálogos (docs/02 › Roles y permisos).
+const ADMINISTRACION: Rol[] = ['SYSADMIN', 'ADMIN']
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -22,6 +25,18 @@ const router = createRouter({
       component: AppLayout,
       children: [
         { path: '', component: () => import('@/pages/InicioPage.vue') },
+        {
+          path: 'catalogos',
+          component: () => import('@/pages/catalogos/CatalogosPage.vue'),
+          meta: { roles: ADMINISTRACION },
+          children: [
+            { path: '', redirect: '/catalogos/procedimientos' },
+            { path: 'procedimientos', component: () => import('@/pages/catalogos/ProcedimientosPage.vue') },
+          ],
+        },
+        // Altas y ediciones: página propia, fuera de las pestañas.
+        { path: 'catalogos/procedimientos/alta', component: () => import('@/pages/catalogos/ProcedimientoFormPage.vue'), meta: { roles: ADMINISTRACION } },
+        { path: 'catalogos/procedimientos/:id', component: () => import('@/pages/catalogos/ProcedimientoFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'sin-permiso', component: () => import('@/pages/SinPermisoPage.vue') },
         // Errores dentro del layout: se pintan en el área de contenido.
         { path: ':pathMatch(.*)*', component: () => import('@/pages/NoEncontradaPage.vue') },
