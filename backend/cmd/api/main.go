@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	_ "embed"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -11,7 +13,14 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
+// banner se incrusta en el binario al compilar; no depende de archivos en disco.
+//
+//go:embed banner.txt
+var banner string
+
 func main() {
+	fmt.Println(banner)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

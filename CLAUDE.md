@@ -9,6 +9,12 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Al terminar un paso: compila, pasa lint y se probó. Decir claramente qué quedó y qué falta.
 - Responder en español.
 
+## Codificación de archivos (obligatorio)
+- Todo archivo de texto en **UTF-8 sin BOM** y fin de línea **LF** (`.editorconfig` y `.gitattributes` lo fijan).
+- Crear y editar archivos con las herramientas de edición, **nunca con PowerShell 5.1** (`Set-Content`, `Out-File`, `>`): lee como ANSI, agrega BOM y rompe la ñ y los acentos.
+- Si hay que transformar un archivo por consola, usar Bash (sed, heredoc).
+- Después de escribir texto en español, verificar que no aparezcan `Ã`, `Â` ni BOM.
+
 ## Stack (no proponer alternativas)
 - `frontend/`: Vue 3 + Vuetify + TypeScript + Pinia + Vue Router + ESLint.
 - `backend/`: Go + Fiber v3.
