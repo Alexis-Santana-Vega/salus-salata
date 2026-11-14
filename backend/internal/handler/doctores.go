@@ -10,19 +10,17 @@ import (
 
 type DoctoresHandler struct{ Svc *service.Doctores }
 
-// direccionReq valida el bloque de dirección (lo reusa hospital).
+// direccionReq: lo que se captura de una dirección (lo reusa hospital). La
+// colonia se elige del catálogo por su id; lo demás sale del catálogo.
 type direccionReq struct {
-	Calle       string `json:"calle" validate:"max=120,texto"`
-	NumExterior string `json:"numExterior" validate:"max=20,texto"`
-	NumInterior string `json:"numInterior" validate:"max=20,texto"`
-	Colonia     string `json:"colonia" validate:"max=120,texto"`
-	CP          string `json:"cp" validate:"omitempty,cp"`
-	Municipio   string `json:"municipio" validate:"max=120,texto"`
-	Estado      string `json:"estado" validate:"omitempty,estado"`
+	Calle          string    `json:"calle" validate:"max=120,texto"`
+	NumExterior    string    `json:"numExterior" validate:"max=20,texto"`
+	NumInterior    string    `json:"numInterior" validate:"max=20,texto"`
+	AsentamientoID *model.ID `json:"asentamientoId"`
 }
 
 func (r direccionReq) modelo() model.Direccion {
-	return model.Direccion(r)
+	return model.Direccion{Calle: r.Calle, NumExterior: r.NumExterior, NumInterior: r.NumInterior, AsentamientoID: r.AsentamientoID}
 }
 
 type doctorReq struct {

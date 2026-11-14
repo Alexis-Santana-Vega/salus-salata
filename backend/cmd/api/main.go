@@ -71,6 +71,9 @@ func run() error {
 	if err := database.Migrate(ctx, db, log); err != nil {
 		return fmt.Errorf("migraciones: %w", err)
 	}
+	if err := database.CargarDirecciones(ctx, db, log); err != nil {
+		return err
+	}
 
 	// Servicios: se crean una vez y se comparten (son seguros para uso concurrente).
 	tokens := security.NewTokens(cfg.Auth.JWTSecret, cfg.Auth.AccessTTL)
@@ -108,6 +111,7 @@ func run() error {
 		Procedimientos: service.NewProcedimientos(db),
 		Tecnicos:       service.NewTecnicos(db),
 		Doctores:       service.NewDoctores(db),
+		Direcciones:    service.NewDirecciones(db),
 	})
 
 	// Única gorutina: Listen bloquea, así que corre aparte y avisa por errCh

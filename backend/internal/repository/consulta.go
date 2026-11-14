@@ -19,8 +19,9 @@ type Consulta struct {
 var ErrOrdenInvalido = errors.New("orden inválido")
 
 // orderBy traduce el campo de la API a su columna con la lista blanca del
-// recurso. Siempre desempata por ID para que la paginación sea estable.
-func orderBy(orden string, columnas map[string]string, defecto string) (string, error) {
+// recurso. Siempre desempata por el id (columna id, p. ej. "D.ID" con JOIN)
+// para que la paginación sea estable.
+func orderBy(orden string, columnas map[string]string, defecto, id string) (string, error) {
 	if orden == "" {
 		orden = defecto
 	}
@@ -32,7 +33,7 @@ func orderBy(orden string, columnas map[string]string, defecto string) (string, 
 	if !ok {
 		return "", ErrOrdenInvalido
 	}
-	return " ORDER BY " + col + " " + dir + ", ID", nil
+	return " ORDER BY " + col + " " + dir + ", " + id, nil
 }
 
 // ErrDuplicado: un valor único ya existe. Campo es el nombre en la API.
@@ -77,4 +78,25 @@ func nulo(s string) any {
 		return nil
 	}
 	return s
+}
+
+// ErrReferencia: el registro apunta a algo que no existe (llave foránea).
+type ErrReferencia struct{ Campo string }
+
+func (e ErrReferencia) Error() string { return "referencia inválida: " + e.Campo }
+
+var reLlaveForanea = regexp.MustCompile(`FOREIGN KEY constraint "?([A-Za-z0-9_$]+)"?`)
+
+// integridad traduce violaciones de índices únicos (ErrDuplicado) y de llaves
+// foráneas (ErrReferencia) con los mapas restricción → campo del recurso.
+func integridad(err error, unicos, foraneas map[string]string) error {
+	if err == nil {
+		return nil
+	}
+	if m := reLlaveForanea.FindStringSubmatch(err.Error()); m != nil {
+		if campo, ok := foraneas[m[1]]; ok {
+			return ErrReferencia{Campo: campo}
+		}
+	}
+	return duplicado(err, unicos)
 }

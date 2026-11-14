@@ -30,7 +30,7 @@ func scanTecnico(s interface{ Scan(...any) error }) (*model.Tecnico, error) {
 
 // Listar devuelve una página de técnicos activos; busca por nombre o teléfono.
 func (r *Tecnicos) Listar(ctx context.Context, q Consulta) ([]model.Tecnico, int, error) {
-	orden, err := orderBy(q.Orden, ordenTecnicos, "nombre")
+	orden, err := orderBy(q.Orden, ordenTecnicos, "nombre", "ID")
 	if err != nil {
 		return nil, 0, err
 	}

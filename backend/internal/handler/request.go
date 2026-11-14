@@ -5,14 +5,12 @@ import (
 	"errors"
 	"reflect"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
 
-	"salus/backend/internal/model"
 	"salus/backend/internal/response"
 )
 
@@ -37,10 +35,6 @@ var validate = func() *validator.Validate {
 	// "texto": texto libre sin etiquetas HTML (misma regla que textoSeguro del front).
 	_ = v.RegisterValidation("texto", func(fl validator.FieldLevel) bool {
 		return !strings.ContainsAny(fl.Field().String(), "<>")
-	})
-	// "estado": abreviatura de una de las 32 entidades (dominio D_ESTADO).
-	_ = v.RegisterValidation("estado", func(fl validator.FieldLevel) bool {
-		return slices.Contains(model.Estados, fl.Field().String())
 	})
 	// "cp": código postal de 5 dígitos (dominio D_CP).
 	_ = v.RegisterValidation("cp", func(fl validator.FieldLevel) bool {
@@ -87,8 +81,6 @@ func mensaje(fe validator.FieldError) string {
 		return "Usa como máximo " + fe.Param() + " caracteres"
 	case "texto":
 		return "No uses los caracteres < ni >"
-	case "estado":
-		return "Elige un estado de la lista"
 	case "cp":
 		return "El código postal tiene 5 dígitos"
 	case "telefono":

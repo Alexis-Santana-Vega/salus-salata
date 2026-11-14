@@ -31,9 +31,11 @@ func (d DatosDoctor) normalizar() DatosDoctor {
 	return d
 }
 
+// limpiarDireccion deja solo lo que se captura: calle, números y asentamiento.
+// C.P., colonia, municipio y estado salen del catálogo al leer.
 func limpiarDireccion(a model.Direccion) model.Direccion {
 	return model.Direccion{Calle: limpiar(a.Calle), NumExterior: limpiar(a.NumExterior), NumInterior: limpiar(a.NumInterior),
-		Colonia: limpiar(a.Colonia), CP: limpiar(a.CP), Municipio: limpiar(a.Municipio), Estado: a.Estado}
+		AsentamientoID: a.AsentamientoID}
 }
 
 func (d DatosDoctor) modelo(id model.ID) model.Doctor {
@@ -49,14 +51,23 @@ func (s *Doctores) Obtener(ctx context.Context, id model.ID) (*model.Doctor, err
 	return repository.NewDoctores(s.db).PorID(ctx, id)
 }
 
+// Crear inserta y relee en la misma transacción: la respuesta trae la
+// dirección completa (C.P., colonia, municipio y estado del catálogo).
 func (s *Doctores) Crear(ctx context.Context, d DatosDoctor) (*model.Doctor, error) {
 	doc := d.normalizar().modelo(model.NuevoID())
 	doc.CreadoEn = time.Now().UTC()
 	doc.ActualizadoEn = doc.CreadoEn
-	if err := repository.NewDoctores(s.db).Crear(ctx, doc); err != nil {
-		return nil, err
-	}
-	return &doc, nil
+	var out *model.Doctor
+	err := enTx(ctx, s.db, func(tx *sql.Tx) error {
+		repo := repository.NewDoctores(tx)
+		if err := repo.Crear(ctx, doc); err != nil {
+			return err
+		}
+		var err error
+		out, err = repo.PorID(ctx, doc.ID)
+		return err
+	})
+	return out, err
 }
 
 // Actualizar y releer en la misma transacción: se devuelve justo lo guardado.

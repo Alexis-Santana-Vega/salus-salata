@@ -27,20 +27,10 @@ func TestReglas(t *testing.T) {
 	}
 }
 
-func TestDireccion(t *testing.T) {
-	casos := []struct {
-		d  direccionReq
-		ok bool
-	}{
-		{direccionReq{}, true},
-		{direccionReq{CP: "37000", Estado: "GTO"}, true},
-		{direccionReq{CP: "1.234"}, false},
-		{direccionReq{CP: "3700"}, false},
-		{direccionReq{Estado: "XX"}, false},
-	}
-	for _, c := range casos {
-		if err := validate.Struct(c.d); (err == nil) != c.ok {
-			t.Errorf("%+v: esperado ok=%v, error=%v", c.d, c.ok, err)
+func TestCP(t *testing.T) {
+	for cp, ok := range map[string]bool{"42000": true, "4200": false, "1.234": false, "42a00": false, "420000": false} {
+		if reCP.MatchString(cp) != ok {
+			t.Errorf("cp %q: esperado %v", cp, ok)
 		}
 	}
 }

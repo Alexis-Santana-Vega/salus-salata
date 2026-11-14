@@ -1,4 +1,4 @@
-import type { Direccion } from '@/utils/estados'
+import type { Direccion } from '@/utils/direccion'
 import { crearRecurso } from './recursos'
 
 export interface Doctor {

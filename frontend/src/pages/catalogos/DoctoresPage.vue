@@ -45,7 +45,7 @@
   import { useBaja } from '@/composables/useBaja'
   import { useListado } from '@/composables/useListado'
   import { type Doctor, doctores } from '@/services/doctores'
-  import { ciudad } from '@/utils/estados'
+  import { ciudad } from '@/utils/direccion'
 
   const router = useRouter()
   const { items, total, cargando, listo, error, busqueda, pagina, porPagina, orden, hayBusqueda, cargar }

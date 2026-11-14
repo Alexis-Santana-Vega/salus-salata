@@ -55,11 +55,14 @@ var nombreCampoUnico = map[string]string{
 // errorCatalogo traduce los errores del repositorio al formato de la API.
 func errorCatalogo(err error) error {
 	var dup repository.ErrDuplicado
+	var ref repository.ErrReferencia
 	switch {
 	case errors.Is(err, repository.ErrNoEncontrado):
 		return response.NotFound("El registro no existe o ya fue dado de baja")
 	case errors.Is(err, repository.ErrOrdenInvalido):
 		return response.Validation(response.FieldError{Field: "sort", Message: "No se puede ordenar por ese campo"})
+	case errors.As(err, &ref):
+		return response.Validation(response.FieldError{Field: ref.Campo, Message: "Elige una opción del catálogo"})
 	case errors.As(err, &dup):
 		texto, ok := nombreCampoUnico[dup.Campo]
 		if !ok {

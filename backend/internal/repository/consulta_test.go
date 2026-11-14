@@ -13,14 +13,14 @@ func TestOrderBy(t *testing.T) {
 		{"-nombre", " ORDER BY NOMBRE DESC, ID"},
 	}
 	for _, c := range casos {
-		got, err := orderBy(c.orden, cols, "nombre")
+		got, err := orderBy(c.orden, cols, "nombre", "ID")
 		if err != nil || got != c.want {
 			t.Errorf("orderBy(%q) = %q, %v", c.orden, got, err)
 		}
 	}
 	// Nada fuera de la lista blanca llega al SQL.
 	for _, malo := range []string{"ID; DROP TABLE X", "otro", "--nombre"} {
-		if _, err := orderBy(malo, cols, "nombre"); !errors.Is(err, ErrOrdenInvalido) {
+		if _, err := orderBy(malo, cols, "nombre", "ID"); !errors.Is(err, ErrOrdenInvalido) {
 			t.Errorf("orderBy(%q) debió rechazarse", malo)
 		}
 	}
@@ -41,5 +41,14 @@ func TestDuplicado(t *testing.T) {
 	otro := errors.New("otra cosa")
 	if duplicado(otro, idx) != otro {
 		t.Fatal("un error ajeno debe pasar igual")
+	}
+}
+
+func TestIntegridad(t *testing.T) {
+	err := integridad(errors.New(`violation of FOREIGN KEY constraint "FK_DOCTOR_ASENTAMIENTO" on table "DOCTOR"`),
+		nil, map[string]string{"FK_DOCTOR_ASENTAMIENTO": "asentamientoId"})
+	var ref ErrReferencia
+	if !errors.As(err, &ref) || ref.Campo != "asentamientoId" {
+		t.Fatalf("no detectó la llave foránea: %v", err)
 	}
 }

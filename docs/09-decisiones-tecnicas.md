@@ -50,7 +50,7 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Tarifas | Nunca se sobrescriben: cambiar el costo por hora crea una fila nueva en `TARIFA_EQUIPO` con su `VIGENTE_DESDE`. Da el historial de precios y la cotización usa la vigente en la fecha de la cirugía. |
 | Stock | Nunca negativo: `CHECK (STOCK_ACTUAL >= 0)` en la BD y validación en el back. Cuando lleguen los movimientos (Fase 7), una salida que deje el stock en negativo se rechaza con un aviso. |
 | Purga | La decide el usuario por equipo (`REQUIERE_PURGA`). `PURGA_CADA` solo es obligatorio si requiere purga (`CHECK`). |
-| Direcciones (México) | Desglosadas: calle, número exterior, número interior, colonia, C.P. (5 dígitos), municipio y estado (lista cerrada de las 32 entidades). Mismo bloque en Go y en el front para doctor y hospital. |
+| Direcciones (México) | **Normalizadas con catálogo**: `ESTADO` (32 entidades, clave INEGI y abreviatura), `MUNICIPIO` (INEGI) y `ASENTAMIENTO` (colonias con C.P., SEPOMEX). Una dirección guarda calle, números y `ASENTAMIENTO_ID`; C.P., colonia, municipio y estado salen del catálogo con JOIN. En el formulario el C.P. carga sus colonias (`GET /api/v1/codigos-postales/{cp}`) y llena municipio y estado. Catálogo cargado: Hidalgo y sus 6 vecinos (México, Querétaro, San Luis Potosí, Veracruz, Puebla, Tlaxcala). Se genera con `cmd/catalogo-direcciones` (CSV de INEGI y hojas de SEPOMEX exportadas a CSV) en `internal/database/catalogos/direcciones.csv.gz`, embebido en el binario; la API carga al arrancar los estados que falten (uno por transacción, ~11 s la primera vez). Para sumar un estado: regenerar el archivo con su hoja. |
 
 ## 5. API
 | Decisión | Detalle |

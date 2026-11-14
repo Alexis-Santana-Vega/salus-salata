@@ -27,6 +27,7 @@ type Deps struct {
 	Procedimientos *service.Procedimientos
 	Tecnicos       *service.Tecnicos
 	Doctores       *service.Doctores
+	Direcciones    *service.Direcciones
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -61,6 +62,10 @@ func Setup(app *fiber.App, d Deps) {
 	crud(v1, "/procedimientos", admin, handler.ProcedimientosHandler{Svc: d.Procedimientos})
 	crud(v1, "/tecnicos", admin, handler.TecnicosHandler{Svc: d.Tecnicos})
 	crud(v1, "/doctores", admin, handler.DoctoresHandler{Svc: d.Doctores})
+
+	// --- Catálogo de direcciones (cualquier sesión) ---
+	direcciones := handler.DireccionesHandler{Svc: d.Direcciones}
+	v1.Get("/codigos-postales/:cp", sesion, direcciones.PorCP)
 
 	// Cualquier otra ruta responde 404 con el formato único.
 	app.Use(func(c fiber.Ctx) error {

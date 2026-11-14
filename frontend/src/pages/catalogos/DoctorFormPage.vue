@@ -80,7 +80,7 @@
       </v-col>
     </seccion-formulario>
 
-    <seccion-formulario ayuda="Ciudad de residencia del doctor. Todos los campos son opcionales." titulo="Dirección">
+    <seccion-formulario ayuda="Opcional. Escribe el C.P. y elige la colonia: el municipio y el estado se llenan solos." titulo="Dirección">
       <campos-direccion v-model="datos.direccion" :errores="errores" @limpiar="limpiarError" />
     </seccion-formulario>
   </formulario-crud>
@@ -106,7 +106,7 @@
   import { useBaja } from '@/composables/useBaja'
   import { useFormulario } from '@/composables/useFormulario'
   import { doctores } from '@/services/doctores'
-  import { direccionVacia } from '@/utils/estados'
+  import { direccionVacia } from '@/utils/direccion'
   import { correo, maximo, requerido, telefono, textoSeguro } from '@/utils/rules'
 
   const route = useRoute()
@@ -121,7 +121,7 @@
       desde: d => ({
         numero: d.numero, nombre: d.nombre, correo: d.correo,
         telPersonal: d.telPersonal, telConsultorio: d.telConsultorio,
-        direccion: { ...d.direccion, estado: d.direccion.estado || null },
+        direccion: { ...d.direccion },
       }),
       mensajes: { creado: 'Doctor dado de alta', actualizado: 'Doctor actualizado' },
       alGuardar: volver,

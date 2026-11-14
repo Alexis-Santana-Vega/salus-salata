@@ -349,6 +349,30 @@ paths:
         '204': { description: Dado de baja }
         '404': { $ref: '#/components/responses/Error' }
 
+  /codigos-postales/{cp}:
+    get:
+      tags: [Direcciones]
+      summary: Colonias de un código postal con su municipio y estado (catálogo SEPOMEX/INEGI)
+      operationId: coloniasPorCP
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: cp, in: path, required: true, schema: { type: string, pattern: "^[0-9]{5}$" } }
+      responses:
+        '200':
+          description: Colonias del C.P.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      cp: { type: string }
+                      asentamientos: { type: array, items: { $ref: "#/components/schemas/Asentamiento" } }
+        '401': { $ref: '#/components/responses/Error' }
+        '404': { description: El C.P. no está en el catálogo, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/Error' }
 components:
   parameters:
     Id: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -398,15 +422,29 @@ components:
   schemas:
     Direccion:
       type: object
-      description: Dirección de México; todos los campos son opcionales
+      description: "Dirección de México. Se envían calle, números y asentamientoId (colonia del catálogo); cp, colonia, municipio, estado y estadoNombre son solo de lectura."
       properties:
         calle: { type: string, maxLength: 120 }
         numExterior: { type: string, maxLength: 20 }
         numInterior: { type: string, maxLength: 20 }
-        colonia: { type: string, maxLength: 120 }
-        cp: { type: string, pattern: "^[0-9]{5}$" }
-        municipio: { type: string, maxLength: 120, description: Ciudad o municipio }
-        estado: { type: string, enum: [AGS, BC, BCS, CAMP, COAH, COL, CHIS, CHIH, CDMX, DGO, GTO, GRO, HGO, JAL, MEX, MICH, MOR, NAY, NL, OAX, PUE, QRO, QROO, SLP, SIN, SON, TAB, TAMPS, TLAX, VER, YUC, ZAC] }
+        asentamientoId: { type: [string, "null"], format: uuid, description: "Id de la colonia (GET /codigos-postales/{cp})" }
+        cp: { type: string, readOnly: true }
+        colonia: { type: string, readOnly: true }
+        municipio: { type: string, readOnly: true }
+        estado: { type: string, readOnly: true, example: HGO }
+        estadoNombre: { type: string, readOnly: true, example: Hidalgo }
+    Asentamiento:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cp: { type: string, example: "42000" }
+        nombre: { type: string, example: Centro }
+        tipo: { type: string, example: Colonia }
+        zona: { type: string, example: Urbano }
+        ciudad: { type: string }
+        municipio: { type: string, example: Pachuca de Soto }
+        estado: { type: string, example: HGO }
+        estadoNombre: { type: string, example: Hidalgo }
     Doctor:
       type: object
       properties:

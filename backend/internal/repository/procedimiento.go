@@ -33,7 +33,7 @@ func scanProcedimiento(s interface{ Scan(...any) error }) (*model.Procedimiento,
 // Listar devuelve una página de procedimientos activos y el total.
 // La búsqueda usa la colación del campo: sin acentos ni mayúsculas.
 func (r *Procedimientos) Listar(ctx context.Context, q Consulta) ([]model.Procedimiento, int, error) {
-	orden, err := orderBy(q.Orden, ordenProcedimientos, "nombre")
+	orden, err := orderBy(q.Orden, ordenProcedimientos, "nombre", "ID")
 	if err != nil {
 		return nil, 0, err
 	}

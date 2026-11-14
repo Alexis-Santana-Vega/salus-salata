@@ -56,13 +56,18 @@ G1–G12 recorridos el 2026-11-14 en Procedimientos y Técnicos: ✔ (paginació
 | D3 | Teléfonos inválidos | Error en cada teléfono | ✔ |
 | D4 | C.P. con letras o distinto de 5 dígitos | Error en C.P. | ✔ |
 | D5 | Alta mínima (nombre + correo) | Se guarda; listado muestra "—" en lo vacío | ✔ |
-| D6 | Alta completa con dirección | Al reabrir aparecen todos los campos | ✔ |
-| D7 | Estado | Select con las 32 entidades | ✔ |
+| D6 | Alta completa con dirección | Al reabrir aparecen calle, números, C.P., colonia, municipio y estado | ✔ |
+| D7 | C.P. de Pachuca con varias colonias | Lista sus colonias; al elegir una se llenan Pachuca de Soto e Hidalgo | ✔ |
 | D8 | Número repetido | Error en Número | ✔ |
 | D9 | Correo repetido con otras mayúsculas | Error en Correo | ✔ |
 | D10 | Buscar por nombre sin acentos, por número y por correo | Lo encuentra | ✔ |
 | D11 | Editar: quitar número y cambiar teléfono | Se guarda así | ✔ |
 | D12 | Eliminar y dar de alta otro con el mismo correo | Se permite | ✔ |
 | D13 | Número de uno dado de baja | No se permite (los números no se reusan) | ✔ |
+| D14 | C.P. con una sola colonia (42000) | Se elige sola "Centro" y se llenan municipio y estado | ✔ |
+| D15 | C.P. fuera del catálogo (99999) | Aviso en el C.P.; no deja elegir colonia | ✔ |
+| D16 | C.P. capturado sin elegir colonia | Error "Elige la colonia" | ✔ |
+| D17 | Editar y cambiar el C.P. | Se limpia la colonia y se cargan las del nuevo C.P. | ✔ |
+| D18 | Borrar el C.P. al editar | Se guarda sin dirección del catálogo | ✔ |
 
-Recorrido el 2026-11-14 (web y móvil, con qa-admin): todo ✔. Sin cambios de lógica.
+Primer recorrido 2026-11-14: D1–D13 ✔. Con el catálogo de C.P. (dirección normalizada) se rehicieron D4, D6, D7 y se agregaron D14–D18: todos ✔ (la lista de colonias también filtra al escribir).
