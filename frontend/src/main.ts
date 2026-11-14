@@ -3,9 +3,9 @@ import { createApp } from 'vue'
 import { registerPlugins } from '@/plugins'
 import App from './App.vue'
 
-// Poppins solo con los pesos que usa la guía de diseño.
-import '@fontsource/poppins/400.css'
-import '@fontsource/poppins/500.css'
+// Títulos: Poppins 600/700. Texto: Inter 400/500.
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/500.css'
 import '@fontsource/poppins/600.css'
 import '@fontsource/poppins/700.css'
 

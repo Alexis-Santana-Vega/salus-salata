@@ -85,6 +85,9 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Tree-shaking | `vite-plugin-vuetify` con `autoImport`: solo se empaqueta lo que se usa. Páginas cargadas bajo demanda en el router. |
 | Grid | Espaciados con `v-container`/`v-row`/`v-col` y utilidades de Vuetify; nada de márgenes a mano. |
 | Validación | **Todo campo lleva `:rules`** con las reglas de `src/utils/rules.ts` (sin librerías). Mismos límites que el back. |
+| Carga (skeletons) | `v-skeleton-loader` solo en el **contenido de la página**, nunca en sidebar ni header. Preferible un solo skeleton para toda la página (una animación de un jalón); si partes de la UI dependen de peticiones distintas, cada una lleva su propio skeleton para no bloquear el resto. También en listas y tablas al paginar (`loading` de `v-data-table` con skeleton de filas). |
+| Transiciones | Usar las transiciones de Vuetify (`v-fade-transition`, `v-expand-transition`, `v-slide-y-transition`, prop `transition`) cuando algo aparece o desaparece, para evitar saltos. Sin animaciones CSS propias. |
+| Fuentes | Títulos con **Poppins** (600/700) y texto con **Inter** (400/500), vía `$heading-font-family` y `$body-font-family`. |
 | Menú | `src/config/menu.ts`: secciones, opción sola u opción con hijos (módulo + altas), filtrado por rol. |
 | Diseño | `05-guia-diseno.md` y los mocks; el usuario da instrucciones al llegar a cada pantalla. |
 | Errores | Siempre amigables (toast o alerta). Nunca códigos, enums, stack ni `requestId` crudo. El front traduce cada `code` de la API. |

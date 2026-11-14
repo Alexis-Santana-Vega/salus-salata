@@ -1,6 +1,6 @@
-// Variables SASS de Vuetify: tipografía y optimización del CSS generado.
+// Variables SASS de Vuetify: tipografía (Inter texto, Poppins títulos) y optimización del CSS.
 @use 'vuetify/settings' with (
-  $body-font-family: ('Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif),
+  $body-font-family: ('Inter', system-ui, -apple-system, 'Segoe UI', sans-serif),
   $heading-font-family: ('Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif),
 
   // Botones sin MAYÚSCULAS ni espaciado extra.

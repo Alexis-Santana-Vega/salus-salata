@@ -58,6 +58,10 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Tema, colores, defaults de componentes y aliases **solo** en `src/plugins/vuetify.ts`. Sin colores, CSS ni clases sueltas en los `.vue`; sin props repetidas que deberían ir en `defaults`.
 - Iconos Lucide solo por alias (`$nombre`) registrados en `src/plugins/icons.ts`.
 - **Todo campo de formulario lleva `:rules`** de `src/utils/rules.ts` (sin librerías externas).
+- **Skeletons** (`v-skeleton-loader`) solo en el contenido de la página, nunca en sidebar ni header; un solo skeleton por página si se puede, y skeletons propios solo para partes con peticiones independientes. También al paginar listas y tablas.
+- **Transiciones de Vuetify** (`v-fade-transition`, `v-expand-transition`, etc.) cuando algo aparece o desaparece; sin animaciones CSS propias.
+- Fuentes: Poppins para títulos, Inter para texto.
+- El diseño debe apegarse a los mocks de Claude Design (https://claude.ai/artifact/3VR1enc7SDGVFu464sF8xg); el usuario dará ajustes.
 - Seguir `docs/05-guia-diseno.md`. Resumen: mobile first, Poppins, primario #0195B7 / secundario #4FB5AB, campos outlined, modo oscuro requerido, sin fondos negros, en pasteles el texto lleva el mismo tono más fuerte.
 - Botón primario sólido; secundario solo texto; de icono sin borde ni fondo. Si dispara una carga: se deshabilita, muestra spinner y dice "Cargando".
 - El usuario da instrucciones de diseño al llegar al paso del front; no adelantarse.
