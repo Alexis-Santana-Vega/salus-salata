@@ -1,20 +1,19 @@
-/**
- * router/index.ts
- *
- * Manual routes for ./src/pages/*.vue
- */
-
-// Composables
+// Rutas de la app. Las páginas se cargan bajo demanda (cada una en su archivo JS).
 import { createRouter, createWebHistory } from 'vue-router'
-import Index from '@/pages/index.vue'
+import AppLayout from '@/layouts/AppLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/login', component: () => import('@/pages/LoginPage.vue') },
     {
       path: '/',
-      component: Index,
+      component: AppLayout,
+      children: [
+        { path: '', component: () => import('@/pages/InicioPage.vue') },
+      ],
     },
+    { path: '/:pathMatch(.*)*', component: () => import('@/pages/NoEncontradaPage.vue') },
   ],
 })
 

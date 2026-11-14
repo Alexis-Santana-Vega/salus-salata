@@ -1,10 +1,14 @@
-/**
- * src/styles/settings.scss
- *
- * Configures SASS variables and Vuetify overwrites
- */
+// Variables SASS de Vuetify: tipografía y optimización del CSS generado.
+@use 'vuetify/settings' with (
+  $body-font-family: ('Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif),
+  $heading-font-family: ('Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif),
 
-// https://vuetifyjs.com/features/sass-variables/`
-// @use 'vuetify/settings' with (
-//   $color-pack: false
-// );
+  // Botones sin MAYÚSCULAS ni espaciado extra.
+  $button-text-transform: none,
+  $button-text-letter-spacing: 0,
+  $button-font-weight: 500,
+
+  // Quita las ~1 000 clases de la paleta Material (red-lighten-2, etc.):
+  // los colores salen solo del tema SALUS.
+  $color-pack: false,
+);

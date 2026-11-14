@@ -54,6 +54,10 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Tokens de acceso de vida corta + refresh revocable. Auditoría de accesos.
 
 ## Frontend y diseño
+- **Regla de oro: mobile first y Vuetify first.** Componentes propios solo en casos especiales (cards de métricas).
+- Tema, colores, defaults de componentes y aliases **solo** en `src/plugins/vuetify.ts`. Sin colores, CSS ni clases sueltas en los `.vue`; sin props repetidas que deberían ir en `defaults`.
+- Iconos Lucide solo por alias (`$nombre`) registrados en `src/plugins/icons.ts`.
+- **Todo campo de formulario lleva `:rules`** de `src/utils/rules.ts` (sin librerías externas).
 - Seguir `docs/05-guia-diseno.md`. Resumen: mobile first, Poppins, primario #0195B7 / secundario #4FB5AB, campos outlined, modo oscuro requerido, sin fondos negros, en pasteles el texto lleva el mismo tono más fuerte.
 - Botón primario sólido; secundario solo texto; de icono sin borde ni fondo. Si dispara una carga: se deshabilita, muestra spinner y dice "Cargando".
 - El usuario da instrucciones de diseño al llegar al paso del front; no adelantarse.

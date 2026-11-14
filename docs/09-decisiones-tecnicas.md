@@ -71,10 +71,22 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | CORS | Solo orígenes exactos; sin `*`; https obligatorio en producción. En producción no se usa. |
 | IP real | Detrás de nginx hay que configurar el proxy de confianza (paso 0.6), si no, todos los usuarios comparten la IP del proxy. |
 
-## 7. Frontend (reglas fijadas antes de construirlo)
+## 7. Frontend
 | Decisión | Detalle |
 |---|---|
-| Diseño | `05-guia-diseno.md`; el usuario da instrucciones al llegar al paso. |
+| Regla de oro | **Mobile first y Vuetify first.** Componentes propios solo en casos especiales (p. ej. cards de métricas). |
+| Configuración global | `src/plugins/vuetify.ts` es el único lugar para tema, colores, defaults y aliases. Sin colores, CSS ni clases sueltas en los `.vue` salvo casos especiales justificados. |
+| Tema | `salus` (claro) y `salusOscuro`, con la paleta de `05`. Colores propios: `brand`, `transito`, `text-secondary`, `text-muted`. Se usan por nombre (`color="..."`, `text-text-muted`). |
+| Defaults | Cada componente se predefine en `defaults` (campos outlined, botón texto, cards con borde, alertas tonales, drawer con borde, etc.). En los `.vue` solo van las props propias del caso. |
+| Aliases | Componentes virtuales para variantes repetidas: `btn-primario`, `btn-icono`, `campo-busqueda`. |
+| Iconos | Lucide (trazo suave) como set por defecto, registrados en `src/plugins/icons.ts` y usados **solo por alias** (`$usuarios`); se importan uno por uno (tree-shaking). |
+| Tipografía | Poppins 400/500/600/700 desde `@fontsource/poppins` (sin CDN). |
+| SASS | `src/styles/settings.scss`: fuente, botones sin mayúsculas y `$color-pack: false` (quita la paleta Material). |
+| Tree-shaking | `vite-plugin-vuetify` con `autoImport`: solo se empaqueta lo que se usa. Páginas cargadas bajo demanda en el router. |
+| Grid | Espaciados con `v-container`/`v-row`/`v-col` y utilidades de Vuetify; nada de márgenes a mano. |
+| Validación | **Todo campo lleva `:rules`** con las reglas de `src/utils/rules.ts` (sin librerías). Mismos límites que el back. |
+| Menú | `src/config/menu.ts`: secciones, opción sola u opción con hijos (módulo + altas), filtrado por rol. |
+| Diseño | `05-guia-diseno.md` y los mocks; el usuario da instrucciones al llegar a cada pantalla. |
 | Errores | Siempre amigables (toast o alerta). Nunca códigos, enums, stack ni `requestId` crudo. El front traduce cada `code` de la API. |
 | Token de acceso | Solo en memoria (Pinia), nunca en `localStorage`. Al recargar la página se pide uno nuevo con `/auth/refresh`. |
 | Refresh | Una sola renovación a la vez: si varias peticiones reciben 401 juntas, esperan la misma promesa (dos renovaciones simultáneas parecen robo y cierran la sesión). |
