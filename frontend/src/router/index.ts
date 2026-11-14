@@ -11,9 +11,10 @@ const router = createRouter({
       component: AppLayout,
       children: [
         { path: '', component: () => import('@/pages/InicioPage.vue') },
+        // Errores dentro del layout: se pintan en el área de contenido.
+        { path: ':pathMatch(.*)*', component: () => import('@/pages/NoEncontradaPage.vue') },
       ],
     },
-    { path: '/:pathMatch(.*)*', component: () => import('@/pages/NoEncontradaPage.vue') },
   ],
 })
 

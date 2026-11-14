@@ -1,6 +1,8 @@
 <template>
-  <h1 class="text-h5 font-weight-bold">Inicio</h1>
-  <p class="text-body-2 text-text-muted mb-6">Resumen de la operación.</p>
-
+  <page-header subtitulo="Resumen de la operación" titulo="Dashboard" />
   <v-alert icon="$info" text="El tablero se construye en la Fase 5. Por ahora puedes navegar por el menú." />
 </template>
+
+<script lang="ts" setup>
+  import PageHeader from '@/components/PageHeader.vue'
+</script>

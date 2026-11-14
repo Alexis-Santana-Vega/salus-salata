@@ -91,21 +91,22 @@ export default createVuetify({
 
   // Estilo por defecto de cada componente. Aquí viven las decisiones de diseño.
   defaults: {
-    global: { ripple: true },
+    // Densidad comfortable en todos los componentes que la admiten.
+    global: { ripple: true, density: 'comfortable' },
 
     // Botón secundario por defecto: solo texto.
     VBtn: { variant: 'text', color: 'primary', rounded: 'lg' },
     BtnPrimario: { variant: 'elevated', color: 'primary', elevation: 2, rounded: 'lg' },
-    BtnIcono: { variant: 'text', icon: true, color: 'text-secondary', density: 'comfortable' },
+    BtnIcono: { variant: 'text', icon: true, color: 'text-secondary', rounded: 'lg' },
 
     // Campos: siempre outlined con la etiqueta en el borde.
-    VTextField: { variant: 'outlined', color: 'primary', density: 'comfortable', hideDetails: 'auto' },
-    VTextarea: { variant: 'outlined', color: 'primary', density: 'comfortable', hideDetails: 'auto' },
-    VSelect: { variant: 'outlined', color: 'primary', density: 'comfortable', hideDetails: 'auto' },
-    VAutocomplete: { variant: 'outlined', color: 'primary', density: 'comfortable', hideDetails: 'auto' },
-    VCombobox: { variant: 'outlined', color: 'primary', density: 'comfortable', hideDetails: 'auto' },
+    VTextField: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
+    VTextarea: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
+    VSelect: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
+    VAutocomplete: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
+    VCombobox: { variant: 'outlined', color: 'primary', rounded: 'lg', hideDetails: 'auto' },
     CampoBusqueda: {
-      variant: 'outlined', density: 'compact', hideDetails: true, singleLine: true,
+      variant: 'outlined', rounded: 'lg', hideDetails: true, singleLine: true,
       prependInnerIcon: '$buscar', placeholder: 'Buscar', color: 'primary',
     },
 
@@ -120,8 +121,8 @@ export default createVuetify({
     // Navegación: drawer blanco con borde, lista anidada.
     VNavigationDrawer: { elevation: 0, border: 'e', width: 264 },
     VAppBar: { flat: true, border: 'b', color: 'surface', density: 'comfortable' },
-    VList: { nav: true, density: 'comfortable', color: 'primary' },
+    VList: { slim: true, color: 'primary' },
     VListItem: { rounded: 'lg' },
-    VListSubheader: { class: 'text-caption text-uppercase font-weight-medium text-text-muted' },
+    VListSubheader: { class: 'text-label-small text-uppercase text-text-muted' },
   },
 })

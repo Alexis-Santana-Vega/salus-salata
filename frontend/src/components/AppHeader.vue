@@ -1,24 +1,23 @@
+<!-- Encabezado (mock: AppHeader). Móvil: menú, marca centrada y avatar. Web: menú, buscador, tema y usuario. -->
 <template>
   <v-app-bar>
     <template #prepend>
       <btn-icono aria-label="Abrir menú" icon="$menu" @click="app.drawer = !app.drawer" />
     </template>
 
-    <!-- Móvil: logo centrado. Web: buscador. -->
     <v-app-bar-title v-if="mobile" class="text-center">
-      <span class="font-weight-bold text-primary">SALUS</span>
+      <span class="text-title-medium font-weight-semibold">Salus Salata</span>
     </v-app-bar-title>
 
-    <campo-busqueda
-      v-else
-      aria-label="Buscar"
-      class="mx-2"
-      max-width="360"
-      placeholder="Buscar  (Ctrl K)"
-    />
+    <campo-busqueda v-else aria-label="Buscar" max-width="460" placeholder="Buscar cirugía, equipo o insumo…">
+      <template #append-inner>
+        <v-chip color="text-secondary" label>Ctrl K</v-chip>
+      </template>
+    </campo-busqueda>
 
     <template #append>
       <btn-icono
+        v-if="!mobile"
         :aria-label="app.esOscuro() ? 'Usar modo claro' : 'Usar modo oscuro'"
         :icon="app.esOscuro() ? '$modoClaro' : '$modoOscuro'"
         @click="app.alternarTema()"
@@ -26,21 +25,30 @@
 
       <v-menu>
         <template #activator="{ props }">
-          <v-btn v-bind="props" class="ml-1" color="default" :icon="mobile">
-            <v-avatar color="primary" size="32" variant="tonal">
-              <v-icon icon="$usuario" size="18" />
+          <v-btn v-bind="props" aria-label="Menú de usuario" color="default" :icon="mobile">
+            <v-avatar color="primary" variant="tonal">
+              <span class="text-label-large font-weight-semibold">{{ usuario.iniciales }}</span>
             </v-avatar>
 
-            <div v-if="!mobile" class="text-start ml-2">
-              <div class="text-body-2 font-weight-medium">{{ usuario.nombre }}</div>
-              <div class="text-caption text-text-muted">{{ usuario.rol }}</div>
-            </div>
+            <template v-if="!mobile">
+              <span class="d-flex flex-column align-start ms-2">
+                <span class="text-label-large font-weight-semibold">{{ usuario.nombre }}</span>
+                <span class="text-body-small text-text-muted">{{ usuario.rol }}</span>
+              </span>
 
-            <v-icon v-if="!mobile" class="ml-1" icon="$dropdown" size="16" />
+              <v-icon end icon="$dropdown" />
+            </template>
           </v-btn>
         </template>
 
-        <v-list density="compact">
+        <v-list>
+          <v-list-item
+            v-if="mobile"
+            :prepend-icon="app.esOscuro() ? '$modoClaro' : '$modoOscuro'"
+            :title="app.esOscuro() ? 'Modo claro' : 'Modo oscuro'"
+            @click="app.alternarTema()"
+          />
+
           <v-list-item prepend-icon="$salir" title="Cerrar sesión" to="/login" />
         </v-list>
       </v-menu>
@@ -56,5 +64,5 @@
   const { mobile } = useDisplay()
 
   // Datos fijos hasta la integración con la API (paso 0.6).
-  const usuario = { nombre: 'Administrador', rol: 'Sysadmin' }
+  const usuario = { nombre: 'Admin SALUS', rol: 'Administrador', iniciales: 'AS' }
 </script>

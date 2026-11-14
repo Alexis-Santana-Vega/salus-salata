@@ -18,13 +18,13 @@ export interface SeccionMenu {
 
 export const menu: SeccionMenu[] = [
   {
-    titulo: 'General',
+    titulo: 'Menú',
     opciones: [
-      { titulo: 'Inicio', icono: '$inicio', to: '/' },
+      { titulo: 'Dashboard', icono: '$inicio', to: '/' },
     ],
   },
   {
-    titulo: 'Administración',
+    titulo: 'Sistema',
     opciones: [
       {
         titulo: 'Usuarios',

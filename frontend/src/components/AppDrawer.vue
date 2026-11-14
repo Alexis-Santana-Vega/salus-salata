@@ -1,11 +1,10 @@
+<!-- Sidebar (mock: Sidebar): marca arriba, secciones con título y opciones sola o expandible. -->
 <template>
   <v-navigation-drawer v-model="app.drawer">
     <template #prepend>
-      <v-list-item class="py-4" title="SALUS" to="/">
-        <template #title>
-          <span class="text-h6 font-weight-bold text-primary">SALUS</span>
-        </template>
-      </v-list-item>
+      <div class="pa-4">
+        <app-marca />
+      </div>
     </template>
 
     <v-list>
@@ -44,6 +43,7 @@
 
 <script lang="ts" setup>
   import { computed } from 'vue'
+  import AppMarca from '@/components/AppMarca.vue'
   import { menu } from '@/config/menu'
   import { useAppStore } from '@/stores/app'
 

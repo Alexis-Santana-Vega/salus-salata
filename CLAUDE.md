@@ -61,7 +61,11 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - **Skeletons** (`v-skeleton-loader`) solo en el contenido de la página, nunca en sidebar ni header; un solo skeleton por página si se puede, y skeletons propios solo para partes con peticiones independientes. También al paginar listas y tablas.
 - **Transiciones de Vuetify** (`v-fade-transition`, `v-expand-transition`, etc.) cuando algo aparece o desaparece; sin animaciones CSS propias.
 - Fuentes: Poppins para títulos, Inter para texto.
-- El diseño debe apegarse a los mocks de Claude Design (https://claude.ai/artifact/3VR1enc7SDGVFu464sF8xg); el usuario dará ajustes.
+- **Antes de construir o ajustar una pantalla, leer su artboard del mock** (https://claude.ai/artifact/3VR1enc7SDGVFu464sF8xg, `project/<Pantalla>.dc.html`, y `Componentes.dc.html` para elementos de UI) y seguirlo: estructura, textos y jerarquía. No inventar diseño.
+- Componentes de UI del mock ya hechos: `PageHeader` (título + subtítulo + acciones), `AppMarca`, `ErrorPagina` (404/403/500/503). Reusarlos, no repetir su diseño a mano.
+- **Sin espaciados manuales** (`pa-*`, `ma-*`, `mt-*`…): los dan el grid (`v-row`/`v-col`) y los componentes; si hay que cambiarlos, en la config global. Densidad `comfortable` global; `v-list` con `slim` y sin `nav`.
+- Tipografía con las clases MD3 de Vuetify 4 (`text-headline-small`, `text-title-large`, `text-body-medium`, `text-label-large`…), no `text-h*`.
+- Páginas de error dentro del dashboard se pintan en el área de contenido, centradas (nunca reemplazan sidebar ni header).
 - Seguir `docs/05-guia-diseno.md`. Resumen: mobile first, Poppins, primario #0195B7 / secundario #4FB5AB, campos outlined, modo oscuro requerido, sin fondos negros, en pasteles el texto lleva el mismo tono más fuerte.
 - Botón primario sólido; secundario solo texto; de icono sin borde ni fondo. Si dispara una carga: se deshabilita, muestra spinner y dice "Cargando".
 - El usuario da instrucciones de diseño al llegar al paso del front; no adelantarse.

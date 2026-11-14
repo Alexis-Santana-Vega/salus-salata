@@ -1,56 +1,60 @@
+<!-- Login (mock: Login / LoginMovil): página blanca sin card, marca arriba y formulario centrado. -->
 <template>
   <v-main>
-    <v-container class="fill-height">
-      <v-row justify="center">
-        <v-col cols="12" lg="4" md="5" sm="8">
-          <div class="text-center mb-6">
-            <div class="text-h4 font-weight-bold text-primary">SALUS</div>
-            <div class="text-body-2 text-text-muted">Renta de equipo médico</div>
-          </div>
+    <v-container class="d-flex flex-column fill-height">
+      <v-row class="flex-grow-0" :justify="mobile ? 'center' : 'start'" no-gutters>
+        <app-marca />
+      </v-row>
 
-          <v-card class="pa-6">
-            <h1 class="text-h6 font-weight-bold mb-1">Iniciar sesión</h1>
-            <p class="text-body-2 text-text-muted mb-6">Entra con tu usuario o correo.</p>
+      <v-row align="center" class="w-100" justify="center">
+        <v-col cols="12" md="5" sm="8" xl="3">
+          <v-form ref="form" @submit.prevent="entrar">
+            <v-row>
+              <v-col class="text-center" cols="12">
+                <h1 class="font-weight-semibold" :class="mobile ? 'text-headline-medium' : 'text-display-small'">Bienvenido</h1>
+                <p class="text-body-large text-text-muted">Control de renta de equipo médico</p>
+              </v-col>
 
-            <v-form ref="form" @submit.prevent="entrar">
-              <v-row>
-                <v-col cols="12">
-                  <v-text-field
-                    v-model.trim="usuario"
-                    autocomplete="username"
-                    label="Usuario o correo"
-                    maxlength="254"
-                    :rules="[requerido, maximo(254), usuarioOCorreo]"
-                  />
-                </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  v-model.trim="usuario"
+                  autocomplete="username"
+                  label="Usuario o correo"
+                  maxlength="254"
+                  persistent-placeholder
+                  placeholder="Escriba su usuario o correo"
+                  :rules="[requerido, maximo(254), usuarioOCorreo]"
+                />
+              </v-col>
 
-                <v-col cols="12">
-                  <v-text-field
-                    v-model="contrasenaValor"
-                    :append-inner-icon="verContrasena ? '$ocultar' : '$ver'"
-                    autocomplete="current-password"
-                    label="Contraseña"
-                    maxlength="128"
-                    :rules="contrasena"
-                    :type="verContrasena ? 'text' : 'password'"
-                    @click:append-inner="verContrasena = !verContrasena"
-                  />
-                </v-col>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="contrasenaValor"
+                  :append-inner-icon="verContrasena ? '$ocultar' : '$ver'"
+                  autocomplete="current-password"
+                  label="Contraseña"
+                  maxlength="128"
+                  persistent-placeholder
+                  placeholder="Escriba su contraseña"
+                  :rules="contrasena"
+                  :type="verContrasena ? 'text' : 'password'"
+                  @click:append-inner="verContrasena = !verContrasena"
+                />
+              </v-col>
 
-                <v-col cols="12">
-                  <btn-primario
-                    block
-                    :disabled="cargando"
-                    :loading="cargando"
-                    size="large"
-                    type="submit"
-                  >
-                    {{ cargando ? 'Cargando' : 'Entrar' }}
-                  </btn-primario>
-                </v-col>
-              </v-row>
-            </v-form>
-          </v-card>
+              <v-col cols="12">
+                <btn-primario
+                  block
+                  :disabled="cargando"
+                  :loading="cargando"
+                  size="large"
+                  type="submit"
+                >
+                  {{ cargando ? 'Cargando' : 'Entrar' }}
+                </btn-primario>
+              </v-col>
+            </v-row>
+          </v-form>
         </v-col>
       </v-row>
     </v-container>
@@ -61,9 +65,12 @@
   import type { VForm } from 'vuetify/components'
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
+  import { useDisplay } from 'vuetify'
+  import AppMarca from '@/components/AppMarca.vue'
   import { contrasena, maximo, requerido, usuarioOCorreo } from '@/utils/rules'
 
   const router = useRouter()
+  const { mobile } = useDisplay()
   const form = ref<VForm>()
   const usuario = ref('')
   const contrasenaValor = ref('')
