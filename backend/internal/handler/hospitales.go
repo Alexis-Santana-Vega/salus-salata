@@ -25,7 +25,6 @@ type contactoReq struct {
 }
 
 type hospitalReq struct {
-	Clave     string               `json:"clave" validate:"required,max=10,clavehospital"`
 	Nombre    string               `json:"nombre" validate:"required,max=150,textogeneral"`
 	Telefono  string               `json:"telefono" validate:"omitempty,telefono"`
 	Direccion direccionHospitalReq `json:"direccion"`
@@ -41,7 +40,7 @@ func (r hospitalReq) datos() service.DatosHospital {
 		cs[i] = model.Contacto(c)
 	}
 	d := r.Direccion
-	return service.DatosHospital{Clave: r.Clave, Nombre: r.Nombre, Telefono: r.Telefono, LigaMapa: r.LigaMapa,
+	return service.DatosHospital{Nombre: r.Nombre, Telefono: r.Telefono, LigaMapa: r.LigaMapa,
 		Direccion: model.Direccion{Calle: d.Calle, NumExterior: d.NumExterior, NumInterior: d.NumInterior, AsentamientoID: d.AsentamientoID},
 		Latitud:   r.Latitud, Longitud: r.Longitud, Contactos: cs}
 }

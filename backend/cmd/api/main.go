@@ -114,6 +114,7 @@ func run() error {
 		Direcciones:    service.NewDirecciones(db),
 		Hospitales:     service.NewHospitales(db),
 		Insumos:        service.NewInsumos(db),
+		Equipos:        service.NewEquipos(db),
 	})
 
 	// Única gorutina: Listen bloquea, así que corre aparte y avisa por errCh

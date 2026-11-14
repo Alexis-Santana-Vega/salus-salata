@@ -85,11 +85,10 @@ Primer recorrido 2026-11-14: D1–D13 ✔. Con el catálogo de C.P. (dirección 
 
 | # | Caso | Esperado | Resultado |
 |---|---|---|---|
-| H1 | Guardar vacío | Error en Clave, Nombre, Calle y C.P./Colonia | ✔ |
-| H2 | Clave sin prefijo de estado válido ("XYZ-001", "GTO001") | Error de formato en Clave | ✔ |
-| H3 | Clave "hgo-001" con colonia de Hidalgo | Se guarda "HGO-001" | ✔ |
-| H4 | Clave con prefijo distinto al estado de la colonia ("GTO-001" con C.P. de Pachuca) | Error en Clave: el prefijo debe ser HGO | ✔ |
-| H5 | Clave repetida (aunque el otro esté dado de baja) | Error en Clave | ✔ |
+| H1 | Guardar vacío | Error en Nombre, Calle y C.P./Colonia (la clave no se pide) | ✔ |
+| H2 | Alta | La clave se genera con el estado de la colonia y su consecutivo (HGO-001, HGO-002…) | ✔ |
+| H3 | Editar | La clave se ve de solo lectura y no cambia | ✔ |
+| H4 | Alta rechazada (p. ej. contacto sin nombre) | No consume el consecutivo | ✔ (API) |
 | H6 | Latitud 200 o longitud -500 | Error en el campo | ✔ |
 | H7 | Liga del mapa sin https | Error en el campo | ✔ |
 | H8 | Alta con 2 contactos | Se guardan los dos, en el mismo orden | ✔ |
@@ -105,17 +104,38 @@ Recorrido 2026-11-14 (web, qa-admin): F1–F4 y H1–H13 ✔ (H5 y H13 también 
 
 | # | Caso | Esperado | Resultado |
 |---|---|---|---|
-| I1 | Guardar vacío | Error en Clave, Descripción y Precio (Unidad trae Pieza y las existencias 0 por defecto) | ✔ |
-| I2 | Clave "son-3-18" | Se guarda "SON-3-18" | ✔ |
-| I3 | Clave repetida (otro insumo, aunque esté dado de baja) | Error en Clave | ✔ |
+| I1 | Guardar vacío | Error en Descripción y Precio (la clave no se pide; Unidad trae Pieza y existencias 0) | ✔ |
+| I2 | Alta | Clave generada INS-0001, INS-0002… | ✔ |
+| I3 | Alta rechazada (código de barras repetido) | No consume la clave | ✔ |
 | I4 | Clave que ya usa un equipo (cuando exista el paso 1.6) | Error en Clave: ya la usa un equipo | — |
 | I5 | Precio negativo, con 3 decimales o con letras | Error en Precio | ✔ |
 | I6 | Stock negativo o con decimales | Error en el campo | ✔ |
 | I7 | Código de barras repetido | Error en Código de barras | ✔ |
 | I8 | Sin código de barras | Se guarda | ✔ |
 | I9 | Stock menor al mínimo | Chip "Bajo mínimo" en el listado | ✔ |
-| I10 | Editar la clave | Se guarda la nueva y la anterior queda libre | ✔ |
+| I10 | Editar | La clave se ve de solo lectura y no cambia | ✔ |
 | I11 | Buscar por clave, descripción o código de barras | Lo encuentra | ✔ |
 | I12 | Ordenar por clave, descripción, precio y stock | Cambia el orden | ✔ |
 
 Recorrido 2026-11-14 (web, qa-admin): I1–I12 ✔ (I11 e I12 también por API). En la vista se comprobó la atomicidad: un alta rechazada por código de barras repetido no dejó reservada su clave. I4 se prueba al construir equipo (1.6).
+
+Claves generadas (2026-11-14): el usuario ya no teclea claves de hospital ni de insumo; H2–H4 e I1–I3, I10 se rehicieron.
+
+## 1.6 Equipo (modelo) y tarifas
+
+| # | Caso | Esperado | Resultado |
+|---|---|---|---|
+| E1 | Guardar vacío | Error en Nombre, Marca/modelo y Costo por hora (Ciclo trae 50) | ✔ |
+| E2 | Alta | Clave generada EQ-001, EQ-002…; tarifa vigente desde hoy | ✔ |
+| E3 | Clave de equipo frente a insumo (I4) | Nunca chocan: las dos se reservan en el mismo catálogo de claves | ✔ |
+| E4 | Costo por hora negativo o con 3 decimales | Error en el campo | ✔ |
+| E5 | Ciclo 0 o con letras | Error en el campo | ✔ |
+| E6 | Activar "Requiere purga" | Aparece "Purga cada (usos)" y es obligatorio; al apagarlo desaparece y no se guarda | ✔ |
+| E7 | Editar sin cambiar el costo | No se crea tarifa nueva | ✔ |
+| E8 | Editar con otro costo | Se agrega una tarifa al historial (vigente desde hoy); el costo vigente cambia | ✔ |
+| E9 | Cambiar el costo dos veces el mismo día | Queda una sola tarifa de hoy con el último costo | ✔ |
+| E10 | Historial de tarifas en la edición | Fecha y costo, la más reciente primero | ✔ |
+| E11 | Listado | Clave, nombre, marca/modelo, costo por hora vigente, ciclo y purga | ✔ |
+| E12 | Buscar por clave, nombre o marca | Lo encuentra | ✔ |
+
+Recorrido 2026-11-14 (web, qa-admin): E1–E12 ✔ (E3, E8, E10 con varias tarifas y E12 por API). Claves generadas verificadas en vista: el alta de hospital e insumo ya no pide clave y la edición la muestra de solo lectura.

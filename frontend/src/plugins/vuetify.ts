@@ -133,6 +133,7 @@ export default createVuetify({
     VBreadcrumbs: { density: 'compact', color: 'primary', class: 'px-0' },
     VPagination: { density: 'comfortable', rounded: 'lg', activeColor: 'primary' },
     VFooter: { color: 'surface' },
+    VSwitch: { color: 'primary', inset: true },
     VSnackbarQueue: { color: 'surface', elevation: 3, rounded: 'lg', location: 'top right', timeout: 4000 },
     VAvatar: { rounded: 'lg' },
     VMenu: { offset: 8 },

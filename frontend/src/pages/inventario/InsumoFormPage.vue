@@ -18,23 +18,15 @@
       <v-btn :block="mobile" color="error" prepend-icon="$eliminar" @click="pedirBaja({ id: id! })">Eliminar</v-btn>
     </template>
 
-    <seccion-formulario ayuda="La clave no puede repetirse con la de un equipo ni con la de otro insumo." primera titulo="Datos generales">
-      <v-col cols="12" md="3">
-        <v-text-field
-          v-model="datos.clave"
-          autofocus
-          :error-messages="errores.clave"
-          label="Clave *"
-          maxlength="30"
-          placeholder="SON-3-24"
-          :rules="[requerido, maximo(30), codigo]"
-          @update:model-value="limpiarError('clave')"
-        />
+    <seccion-formulario ayuda="La clave se genera al guardar (INS-0001) y no se repite con la de ningún equipo." primera titulo="Datos generales">
+      <v-col v-if="esEdicion" cols="12" md="3">
+        <campo-generado label="Clave" :valor="datos.clave" />
       </v-col>
 
       <v-col cols="12" md="6">
         <v-text-field
           v-model="datos.descripcion"
+          autofocus
           :error-messages="errores.descripcion"
           label="Descripción / material *"
           maxlength="200"
@@ -121,6 +113,7 @@
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import CampoGenerado from '@/components/CampoGenerado.vue'
   import DialogoEliminar from '@/components/DialogoEliminar.vue'
   import ErrorPagina from '@/components/ErrorPagina.vue'
   import FormularioCrud from '@/components/FormularioCrud.vue'

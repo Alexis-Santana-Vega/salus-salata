@@ -30,6 +30,7 @@ type Deps struct {
 	Direcciones    *service.Direcciones
 	Hospitales     *service.Hospitales
 	Insumos        *service.Insumos
+	Equipos        *service.Equipos
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -66,6 +67,7 @@ func Setup(app *fiber.App, d Deps) {
 	crud(v1, "/doctores", admin, handler.DoctoresHandler{Svc: d.Doctores})
 	crud(v1, "/hospitales", admin, handler.HospitalesHandler{Svc: d.Hospitales})
 	crud(v1, "/insumos", admin, handler.InsumosHandler{Svc: d.Insumos})
+	crud(v1, "/equipos", admin, handler.EquiposHandler{Svc: d.Equipos})
 
 	// --- Catálogo de direcciones (cualquier sesión) ---
 	direcciones := handler.DireccionesHandler{Svc: d.Direcciones}

@@ -76,27 +76,10 @@ func (r *Insumos) PorID(ctx context.Context, id model.ID) (*model.Insumo, error)
 	return scanInsumo(r.db.QueryRowContext(ctx, selectInsumo+` WHERE ID = ? AND ACTIVO = TRUE`, id))
 }
 
-// ClaveDe devuelve la clave actual de un insumo activo.
-func (r *Insumos) ClaveDe(ctx context.Context, id model.ID) (string, error) {
-	var clave string
-	err := r.db.QueryRowContext(ctx, `SELECT CLAVE FROM INSUMO WHERE ID = ? AND ACTIVO = TRUE`, id).Scan(&clave)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrNoEncontrado
-	}
-	return clave, err
-}
-
 // ReservarClave registra la clave en CLAVE_CATALOGO (falla si ya la usa un
 // equipo o un insumo, aunque esté dado de baja).
 func (r *Insumos) ReservarClave(ctx context.Context, clave string) error {
 	_, err := r.db.ExecContext(ctx, `INSERT INTO CLAVE_CATALOGO (CLAVE, TIPO) VALUES (?, 'INSUMO')`, clave)
-	return integridad(err, indicesInsumos, nil)
-}
-
-// CambiarClave corrige la clave: se cambia en CLAVE_CATALOGO y baja en
-// cascada al insumo. La anterior queda libre.
-func (r *Insumos) CambiarClave(ctx context.Context, anterior, nueva string) error {
-	_, err := r.db.ExecContext(ctx, `UPDATE CLAVE_CATALOGO SET CLAVE = ? WHERE CLAVE = ? AND TIPO = 'INSUMO'`, nueva, anterior)
 	return integridad(err, indicesInsumos, nil)
 }
 

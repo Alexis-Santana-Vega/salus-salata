@@ -484,6 +484,72 @@ paths:
         '404': { $ref: '#/components/responses/Error' }
 
 
+  /equipos:
+    get:
+      tags: [Equipos]
+      summary: Listar equipos activos con su costo por hora vigente
+      operationId: listarEquipos
+      security: [{ bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Q'
+        - { name: sort, in: query, description: 'clave, nombre, marcaModelo, cicloMax, creadoEn; con "-" adelante es descendente', schema: { type: string, default: clave, example: nombre } }
+      responses:
+        '200':
+          description: Página de equipos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Equipo' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Equipos]
+      summary: Alta de equipo
+      operationId: crearEquipo
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Equipo' }
+      responses:
+        '201': { $ref: '#/components/responses/Equipo' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+  /equipos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Equipos]
+      summary: Consultar un equipo
+      operationId: obtenerEquipo
+      security: [{ bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Equipo' }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [Equipos]
+      summary: Editar un equipo
+      operationId: actualizarEquipo
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Equipo' }
+      responses:
+        '200': { $ref: '#/components/responses/Equipo' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Equipos]
+      summary: Baja lógica (se conserva para el historial)
+      operationId: bajaEquipo
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Dado de baja }
+        '404': { $ref: '#/components/responses/Error' }
+
+
   /codigos-postales/{cp}:
     get:
       tags: [Direcciones]
@@ -515,15 +581,28 @@ components:
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     Q: { name: q, in: query, description: Contiene el texto, sin importar acentos ni mayúsculas, schema: { type: string, maxLength: 100 } }
   requestBodies:
+    Equipo:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [nombre, marcaModelo, cicloMax, costoHora]
+            properties:
+              nombre: { type: string, maxLength: 120 }
+              marcaModelo: { type: string, maxLength: 120 }
+              cicloMax: { type: integer, minimum: 1, default: 50 }
+              requierePurga: { type: boolean }
+              purgaCada: { type: [integer, "null"], minimum: 1, description: "Obligatorio si requierePurga" }
+              costoHora: { type: number, minimum: 0, multipleOf: 0.01, description: "Si cambia, se agrega una tarifa vigente desde hoy" }
     Insumo:
       required: true
       content:
         application/json:
           schema:
             type: object
-            required: [clave, descripcion, unidad, precio, stockActual, stockMinimo]
+            required: [descripcion, unidad, precio, stockActual, stockMinimo]
             properties:
-              clave: { type: string, maxLength: 30, example: SON-3-18, description: "Única entre equipos e insumos; se guarda en mayúsculas" }
               descripcion: { type: string, maxLength: 200 }
               unidad: { type: string, enum: [PIEZA, CAJA, PAQUETE] }
               precio: { type: number, minimum: 0, multipleOf: 0.01 }
@@ -536,9 +615,8 @@ components:
         application/json:
           schema:
             type: object
-            required: [clave, nombre, direccion]
+            required: [nombre, direccion]
             properties:
-              clave: { type: string, example: HGO-001, description: "Prefijo = estado de la colonia; 3 o 4 dígitos; se guarda en mayúsculas; no se reusa" }
               nombre: { type: string, maxLength: 150 }
               telefono: { type: string, maxLength: 20 }
               direccion: { $ref: "#/components/schemas/Direccion", description: "calle y asentamientoId obligatorios" }
@@ -585,11 +663,30 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Tarifa:
+      type: object
+      properties:
+        costoHora: { type: number }
+        vigenteDesde: { type: string, format: date }
+    Equipo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string, readOnly: true, example: EQ-001 }
+        nombre: { type: string }
+        marcaModelo: { type: string }
+        cicloMax: { type: integer }
+        requierePurga: { type: boolean }
+        purgaCada: { type: [integer, "null"] }
+        costoHora: { type: number, description: Tarifa vigente hoy }
+        tarifas: { type: array, items: { $ref: "#/components/schemas/Tarifa" }, description: "Historial (solo en el detalle)" }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
     Insumo:
       type: object
       properties:
         id: { type: string, format: uuid }
-        clave: { type: string }
+        clave: { type: string, readOnly: true, example: INS-0001, description: "La genera el sistema" }
         descripcion: { type: string }
         unidad: { type: string, enum: [PIEZA, CAJA, PAQUETE] }
         precio: { type: number }
@@ -610,7 +707,7 @@ components:
       type: object
       properties:
         id: { type: string, format: uuid }
-        clave: { type: string }
+        clave: { type: string, readOnly: true, example: HGO-001, description: "La genera el sistema: estado de la colonia y consecutivo" }
         nombre: { type: string }
         telefono: { type: string }
         direccion: { $ref: "#/components/schemas/Direccion" }
@@ -728,6 +825,11 @@ components:
               items: { $ref: '#/components/schemas/FieldError' }
             requestId: { type: string }
   responses:
+    Equipo:
+      description: Equipo
+      content:
+        application/json:
+          schema: { type: object, properties: { data: { $ref: "#/components/schemas/Equipo" } } }
     Insumo:
       description: Insumo
       content:

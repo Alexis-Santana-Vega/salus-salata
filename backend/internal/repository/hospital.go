@@ -165,9 +165,9 @@ func (r *Hospitales) Crear(ctx context.Context, h model.Hospital) error {
 }
 
 func (r *Hospitales) Actualizar(ctx context.Context, h model.Hospital) error {
-	args := append(camposHospital(h), h.ActualizadoEn, h.ID)
+	args := append(camposHospital(h)[1:], h.ActualizadoEn, h.ID) // la clave no cambia
 	res, err := r.db.ExecContext(ctx, `
-		UPDATE HOSPITAL SET CLAVE = ?, NOMBRE = ?, TELEFONO = ?, CALLE = ?, NUM_EXTERIOR = ?, NUM_INTERIOR = ?,
+		UPDATE HOSPITAL SET NOMBRE = ?, TELEFONO = ?, CALLE = ?, NUM_EXTERIOR = ?, NUM_INTERIOR = ?,
 		       ASENTAMIENTO_ID = ?, LATITUD = ?, LONGITUD = ?, LIGA_MAPA = ?, ACTUALIZADO_EN = ?
 		WHERE ID = ? AND ACTIVO = TRUE`, args...)
 	if err != nil {

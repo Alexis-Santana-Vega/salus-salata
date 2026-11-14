@@ -18,18 +18,9 @@
       <v-btn :block="mobile" color="error" prepend-icon="$eliminar" @click="pedirBaja({ id: id! })">Eliminar</v-btn>
     </template>
 
-    <seccion-formulario ayuda="La clave lleva el prefijo del estado de su colonia (HGO-001)." primera titulo="Datos generales">
-      <v-col cols="12" md="3">
-        <v-text-field
-          v-model="datos.clave"
-          :error-messages="errores.clave"
-          :hint="datos.direccion.estado ? `Debe empezar con ${datos.direccion.estado}-` : 'Ej. HGO-001'"
-          label="Clave *"
-          maxlength="10"
-          persistent-hint
-          :rules="[requerido, claveHospital, prefijoEstado]"
-          @update:model-value="limpiarError('clave')"
-        />
+    <seccion-formulario ayuda="La clave se genera al guardar con el estado de la colonia (HGO-001)." primera titulo="Datos generales">
+      <v-col v-if="esEdicion" cols="12" md="3">
+        <campo-generado label="Clave" :valor="datos.clave" />
       </v-col>
 
       <v-col cols="12" md="6">
@@ -165,6 +156,7 @@
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import CampoGenerado from '@/components/CampoGenerado.vue'
   import CamposDireccion from '@/components/CamposDireccion.vue'
   import DialogoEliminar from '@/components/DialogoEliminar.vue'
   import ErrorPagina from '@/components/ErrorPagina.vue'
@@ -174,7 +166,7 @@
   import { useFormulario } from '@/composables/useFormulario'
   import { aEnvio, hospitales } from '@/services/hospitales'
   import { direccionVacia } from '@/utils/direccion'
-  import { claveHospital, ligaHttps, maximo, nombrePersona, rango, requerido, telefono, textoGeneral } from '@/utils/rules'
+  import { ligaHttps, maximo, nombrePersona, rango, requerido, telefono, textoGeneral } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()
@@ -197,13 +189,6 @@
 
   const titulo = computed(() => (esEdicion.value ? 'Editar hospital' : 'Alta de hospital'))
   const textoBaja = computed(() => `${datos.nombre} dejará de aparecer al programar cirugías. Las cirugías que ya tiene lo conservan.`)
-
-  // Con colonia elegida, la clave debe empezar con el estado de esa colonia (igual que el back).
-  function prefijoEstado (v: unknown) {
-    const estado = datos.direccion.estado
-    const clave = String(v ?? '').trim().toUpperCase()
-    return !estado || !clave || clave.startsWith(`${estado}-`) || `La clave debe empezar con ${estado}-`
-  }
 
   // En móvil la baja se hace desde aquí (la lista solo abre la edición).
   const { abierto: bajaAbierta, eliminando, pedir: pedirBaja, confirmar: confirmarBaja }

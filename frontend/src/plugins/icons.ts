@@ -12,8 +12,8 @@ import {
   ChevronsLeft, ChevronsRight, ChevronUp, Circle, CircleDot, ClipboardList, Clock, Command,
   CornerDownLeft, Delete, Eye, EyeOff, File, Info, LayoutDashboard, Loader2, LogOut, Menu, Minus,
   Moon, Package, Pencil, Pipette, Plus, Search, SearchX, Square, SquareCheck, SquareMinus, Star,
-  StarHalf, Sun, Tag, Trash2, Upload, User, UserPlus,
-  Users, WifiOff, X, XCircle,
+  StarHalf, Sun, Tag, Trash2, Upload, User, UserPlus, Users,
+  WifiOff, Wrench, X, XCircle,
 } from 'lucide-vue-next'
 import { type Component, defineComponent, h, mergeProps } from 'vue'
 
@@ -32,6 +32,7 @@ const registro: Record<string, Component> = {
   ocultar: EyeOff,
   catalogos: BookOpen,
   insumos: Package,
+  equipo: Wrench,
   agregar: Plus,
   editar: Pencil,
   eliminar: Trash2,

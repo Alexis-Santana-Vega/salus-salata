@@ -62,7 +62,10 @@ A=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "Sysadmin entra a /usuarios" 200 "$(cod -H "Authorization: Bearer $A" $F/api/v1/usuarios)"
 
 # Parte de catálogos vacíos: lo que se probó a mano en la vista no interfiere.
-printf 'DELETE FROM INSUMO;
+printf 'DELETE FROM CONSECUTIVO;
+DELETE FROM TARIFA_EQUIPO;
+DELETE FROM EQUIPO;
+DELETE FROM INSUMO;
 DELETE FROM CLAVE_CATALOGO;
 DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nCOMMIT;
 ' | sql
@@ -132,48 +135,71 @@ probar "correo de uno dado de baja se reusa → 201" 201 "$(cod -H "$AU" -H "$J"
 reiniciar_limites
 echo "Catálogo de hospitales"
 HC=$F/api/v1/hospitales
-CUERPO_H='{"clave":"hgo-001","nombre":"Hospital Angeles Pachuca","telefono":"771 123 4567","direccion":{"calle":"Av Revolucion","numExterior":"434","asentamientoId":"'$ASEN'"},"latitud":20.1,"longitud":-98.7,"ligaMapa":"https://maps.google.com/?q=pachuca","contactos":[{"nombre":"Juan Perez","puesto":"Quirofano","telefono":"771 000 1111"},{"nombre":"Ana Lopez","puesto":"Almacen"}]}'
+CUERPO_H='{"clave":"XYZ-999","nombre":"Hospital Angeles Pachuca","telefono":"771 123 4567","direccion":{"calle":"Av Revolucion","numExterior":"434","asentamientoId":"'$ASEN'"},"latitud":20.1,"longitud":-98.7,"ligaMapa":"https://maps.google.com/?q=pachuca","contactos":[{"nombre":"Juan Perez","puesto":"Quirofano","telefono":"771 000 1111"},{"nombre":"Ana Lopez","puesto":"Almacen"}]}'
 probar "alta con 2 contactos → 201" 201 "$(cod -H "$AU" -H "$J" -d "$CUERPO_H" $HC)"
 HID=$(grep -oE '"id":"[^"]+"' $T/r | head -1 | cut -d'"' -f4)
-probar "clave en mayúsculas" 1 "$(grep -c '"clave":"HGO-001"' $T/r)"
+probar "clave generada con el estado de la colonia (ignora la enviada)" 1 "$(grep -c '"clave":"HGO-001"' $T/r)"
 probar "contactos en el orden capturado" 1 "$(grep -c '"contactos":\[{"nombre":"Juan Perez".*{"nombre":"Ana Lopez"' $T/r)"
 probar "dirección completa desde el catálogo" 1 "$(grep -c '"municipio":"Pachuca de Soto","estado":"HGO"' $T/r)"
-probar "clave repetida → 409 en clave" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/Angeles/Otro}" $HC >/dev/null; grep -c '"field":"clave"' $T/r)"
-probar "prefijo distinto al estado de la colonia → 422 en clave" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/hgo-001/GTO-002}" $HC >/dev/null; grep -c '"field":"clave","message":"La clave debe empezar con HGO' $T/r)"
-probar "clave sin formato → 422" 422 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/hgo-001/HGO001}" $HC)"
+probar "segundo hospital del estado → HGO-002" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/Angeles/Otro}" $HC >/dev/null; grep -c '"clave":"HGO-002"' $T/r)"
 probar "latitud fuera de rango → 422" 422 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/20.1/200}" $HC)"
 probar "liga sin https → 422" 422 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/https:/http:}" $HC)"
 probar "contacto sin nombre → 422 en contactos[1].nombre" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/Ana Lopez/}" $HC >/dev/null; grep -c '"field":"contactos\[1\].nombre"' $T/r)"
-probar "sin dirección → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"HGO-009","nombre":"X"}' $HC)"
+probar "un alta rechazada no consume el consecutivo (sigue HGO-003)" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/Angeles/Tercero}" $HC >/dev/null; grep -c '"clave":"HGO-003"' $T/r)"
+probar "sin dirección → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X"}' $HC)"
 probar "edición deja solo los contactos enviados → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" -d "${CUERPO_H/',{"nombre":"Ana Lopez","puesto":"Almacen"}'/}" $HC/$HID)"
 probar "queda un solo contacto" 0 "$(grep -c 'Ana Lopez' $T/r)"
-probar "búsqueda por municipio (?q=pachuca) → 1" 1 "$(cod -H "$AU" "$HC?q=pachuca" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
+probar "la edición no cambia la clave" 1 "$(grep -c '"clave":"HGO-001"' $T/r)"
+probar "búsqueda por municipio (?q=pachuca) → 3" 3 "$(cod -H "$AU" "$HC?q=pachuca" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
 probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $HC/$HID)"
-probar "la clave de uno dado de baja no se reusa → 409" 409 "$(cod -H "$AU" -H "$J" -d "$CUERPO_H" $HC)"
 
 reiniciar_limites
 echo "Insumos"
 IC=$F/api/v1/insumos
-probar "alta → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"son-3-18","descripcion":"Sonda Foley 3 vias 18 fr","unidad":"PIEZA","precio":125.5,"codigoBarras":"7501234567890","stockActual":2,"stockMinimo":3}' $IC)"
+probar "alta → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"MIA-1","descripcion":"Sonda Foley 3 vias 18 fr","unidad":"PIEZA","precio":125.5,"codigoBarras":"7501234567890","stockActual":2,"stockMinimo":3}' $IC)"
 IID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
-probar "clave en mayúsculas" 1 "$(grep -c '"clave":"SON-3-18"' $T/r)"
+probar "clave generada INS-0001 (ignora la enviada)" 1 "$(grep -c '"clave":"INS-0001"' $T/r)"
 probar "marca bajo mínimo (2 < 3)" 1 "$(grep -c '"bajoMinimo":true' $T/r)"
 probar "precio con 2 decimales" 1 "$(grep -c '"precio":125.5' $T/r)"
-probar "clave repetida → 409 en clave" 1 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-18","descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC >/dev/null; grep -c '"field":"clave"' $T/r)"
-probar "código de barras repetido → 409" 1 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-20","descripcion":"X","unidad":"PIEZA","precio":1,"codigoBarras":"7501234567890","stockActual":0,"stockMinimo":0}' $IC >/dev/null; grep -c '"field":"codigoBarras"' $T/r)"
-probar "la transacción no deja la clave a medias (SON-3-20 sigue libre)" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-20","descripcion":"Sonda 20 fr","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
-probar "precio con 3 decimales → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"PIEZA","precio":1.005,"stockActual":0,"stockMinimo":0}' $IC)"
-probar "precio negativo → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"PIEZA","precio":-1,"stockActual":0,"stockMinimo":0}' $IC)"
-probar "stock negativo → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":-1,"stockMinimo":0}' $IC)"
-probar "unidad fuera de la lista → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"X-1","descripcion":"X","unidad":"LITRO","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "código de barras repetido → 409" 1 "$(cod -H "$AU" -H "$J" -d '{"descripcion":"X","unidad":"PIEZA","precio":1,"codigoBarras":"7501234567890","stockActual":0,"stockMinimo":0}' $IC >/dev/null; grep -c '"field":"codigoBarras"' $T/r)"
+probar "el alta rechazada no consumió clave (sigue INS-0002)" 1 "$(cod -H "$AU" -H "$J" -d '{"descripcion":"Sonda 20 fr","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC >/dev/null; grep -c '"clave":"INS-0002"' $T/r)"
+probar "la clave quedó reservada en CLAVE_CATALOGO como INSUMO" 1 "$(echo "SELECT COUNT(*) FROM CLAVE_CATALOGO WHERE CLAVE = 'INS-0002' AND TIPO = 'INSUMO';" | sql | tail -2 | head -1 | tr -d ' ')"
+probar "precio con 3 decimales → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"descripcion":"X","unidad":"PIEZA","precio":1.005,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "precio negativo → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"descripcion":"X","unidad":"PIEZA","precio":-1,"stockActual":0,"stockMinimo":0}' $IC)"
+probar "stock negativo → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":-1,"stockMinimo":0}' $IC)"
+probar "unidad fuera de la lista → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"descripcion":"X","unidad":"LITRO","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
 probar "el CHECK de la base rechaza stock negativo" 1 "$(printf "UPDATE INSUMO SET STOCK_ACTUAL = -1;\nROLLBACK;\n" | sql 2>&1 | grep -c CK_INSUMO_STOCK)"
-probar "editar la clave → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" -d '{"clave":"SON-3-18A","descripcion":"Sonda Foley 3 vias 18 fr","unidad":"PIEZA","precio":125.5,"codigoBarras":"7501234567890","stockActual":5,"stockMinimo":3}' $IC/$IID)"
+probar "edición → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" -d '{"clave":"OTRA","descripcion":"Sonda Foley 3 vias 18 fr","unidad":"PIEZA","precio":125.5,"codigoBarras":"7501234567890","stockActual":5,"stockMinimo":3}' $IC/$IID)"
+probar "la edición no cambia la clave" 1 "$(grep -c '"clave":"INS-0001"' $T/r)"
 probar "ya no está bajo mínimo (5 >= 3)" 1 "$(grep -c '"bajoMinimo":false' $T/r)"
-probar "la clave anterior quedó libre → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-18","descripcion":"Sonda nueva","unidad":"CAJA","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
 probar "búsqueda por código de barras → 1" 1 "$(cod -H "$AU" "$IC?q=750123" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
 probar "orden por precio → 200" 200 "$(cod -H "$AU" "$IC?sort=-precio")"
 probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $IC/$IID)"
-probar "la clave de uno dado de baja no se reusa → 409" 409 "$(cod -H "$AU" -H "$J" -d '{"clave":"SON-3-18A","descripcion":"X","unidad":"PIEZA","precio":1,"stockActual":0,"stockMinimo":0}' $IC)"
+
+reiniciar_limites
+echo "Equipos y tarifas"
+EC=$F/api/v1/equipos
+CUERPO_E='{"nombre":"Torre de Laparoscopia","marcaModelo":"Gimmi","cicloMax":50,"requierePurga":false,"purgaCada":5,"costoHora":1500}'
+probar "alta → 201" 201 "$(cod -H "$AU" -H "$J" -d "$CUERPO_E" $EC)"
+EID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
+probar "clave generada EQ-001" 1 "$(grep -c '"clave":"EQ-001"' $T/r)"
+probar "costo vigente 1500" 1 "$(grep -c '"costoHora":1500,' $T/r)"
+probar "sin purga no guarda 'cada cuántos'" 1 "$(grep -c '"requierePurga":false,"purgaCada":null' $T/r)"
+probar "una tarifa en el historial" 1 "$(grep -o '"vigenteDesde"' $T/r | wc -l | tr -d ' ')"
+probar "la clave quedó reservada como EQUIPO" 1 "$(echo "SELECT COUNT(*) FROM CLAVE_CATALOGO WHERE CLAVE = 'EQ-001' AND TIPO = 'EQUIPO';" | sql | tail -2 | head -1 | tr -d ' ')"
+probar "purga sin 'cada cuántos' → 422" 1 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Morcelador","marcaModelo":"Simai","cicloMax":50,"requierePurga":true,"costoHora":900}' $EC >/dev/null; grep -c '"field":"purgaCada"' $T/r)"
+probar "con purga cada 5 → 201 y clave EQ-002" 1 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Morcelador","marcaModelo":"Simai","cicloMax":50,"requierePurga":true,"purgaCada":5,"costoHora":900}' $EC >/dev/null; grep -c '"clave":"EQ-002".*"requierePurga":true,"purgaCada":5' $T/r)"
+probar "costo con 3 decimales → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","marcaModelo":"X","cicloMax":50,"costoHora":1.005}' $EC)"
+probar "ciclo 0 → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","marcaModelo":"X","cicloMax":0,"costoHora":1}' $EC)"
+probar "editar sin cambiar el costo → no agrega tarifa" 1 "$(cod -X PUT -H "$AU" -H "$J" -d "${CUERPO_E/Gimmi/Gimmi LX}" $EC/$EID >/dev/null; grep -o '"vigenteDesde"' $T/r | wc -l | tr -d ' ')"
+probar "editar con otro costo el mismo día corrige la tarifa de hoy" 1 "$(cod -X PUT -H "$AU" -H "$J" -d "${CUERPO_E/1500/1800}" $EC/$EID >/dev/null; grep -o '"vigenteDesde"' $T/r | wc -l | tr -d ' ')"
+probar "el costo vigente cambió a 1800" 1 "$(grep -c '"costoHora":1800,' $T/r)"
+printf "UPDATE TARIFA_EQUIPO SET VIGENTE_DESDE = DATEADD(-10 DAY TO VIGENTE_DESDE) WHERE EQUIPO_ID = (SELECT ID FROM EQUIPO WHERE CLAVE = 'EQ-001');\nCOMMIT;\n" | sql
+probar "con una tarifa anterior, un cambio agrega historial (2 tarifas)" 2 "$(cod -X PUT -H "$AU" -H "$J" -d "${CUERPO_E/1500/2000}" $EC/$EID >/dev/null; grep -o '"vigenteDesde"' $T/r | wc -l | tr -d ' ')"
+probar "la más reciente primero" 1 "$(grep -c '"tarifas":\[{"costoHora":2000' $T/r)"
+probar "búsqueda por marca (?q=simai) → 1" 1 "$(cod -H "$AU" "$EC?q=simai" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
+probar "el listado trae el costo vigente" 1 "$(cod -H "$AU" "$EC?q=gimmi" >/dev/null; grep -c '"costoHora":2000' $T/r)"
+probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $EC/$EID)"
 
 echo "Formatos de texto"
 probar "nombre de procedimiento con ; → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Holep; DROP TABLE X"}' $P)"
@@ -191,13 +217,17 @@ probar "rol Doctor no ve los técnicos → 403" 403 "$(cod -H "Authorization: Be
 probar "rol Doctor no ve el catálogo de doctores → 403" 403 "$(cod -H "Authorization: Bearer $AD" $DC)"
 probar "rol Doctor no ve los hospitales → 403" 403 "$(cod -H "Authorization: Bearer $AD" $HC)"
 probar "rol Doctor no ve los insumos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $IC)"
+probar "rol Doctor no ve los equipos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $EC)"
 probar "ruta inexistente de la API sigue en 404" 404 "$(cod -H "$AU" $F/api/v1/no-existe)"
 probar "refresh con la cookie (recarga de página)" 200 "$(curl -s -b $T/c -c $T/c -o $T/r -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 probar "logout → 204" 204 "$(curl -s -b $T/c -c $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/logout)"
 probar "refresh tras logout → 401" 401 "$(curl -s -b $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 
 echo "Limpieza"
-printf 'DELETE FROM INSUMO;
+printf 'DELETE FROM CONSECUTIVO;
+DELETE FROM TARIFA_EQUIPO;
+DELETE FROM EQUIPO;
+DELETE FROM INSUMO;
 DELETE FROM CLAVE_CATALOGO;
 DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
 docker compose restart backend >/dev/null 2>&1

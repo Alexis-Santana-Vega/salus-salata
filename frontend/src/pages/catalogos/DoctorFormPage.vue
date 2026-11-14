@@ -33,15 +33,7 @@
 
       <!-- El número interno lo genera el sistema al dar de alta (DOC-0001). -->
       <v-col v-if="esEdicion" cols="12" md="6">
-        <v-text-field
-          :counter="false"
-          hint="Lo asigna el sistema"
-          label="Número interno"
-          :model-value="datos.numero"
-          persistent-hint
-          readonly
-          :rules="[]"
-        />
+        <campo-generado label="Número interno" :valor="datos.numero" />
       </v-col>
 
       <v-col cols="12" md="6">
@@ -103,6 +95,7 @@
   import { computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import CampoGenerado from '@/components/CampoGenerado.vue'
   import CamposDireccion from '@/components/CamposDireccion.vue'
   import DialogoEliminar from '@/components/DialogoEliminar.vue'
   import ErrorPagina from '@/components/ErrorPagina.vue'

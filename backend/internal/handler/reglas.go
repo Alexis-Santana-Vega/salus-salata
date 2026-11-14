@@ -24,8 +24,6 @@ var (
 	reNumDomicilio = regexp.MustCompile(`^[\p{L}\p{N}][\p{L}\p{N} #/.-]*$`)
 	// Códigos y claves: letras sin acento, números y guion (DOC-001, GTO-001).
 	reCodigo = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]*$`)
-	// Clave de hospital: abreviatura del estado, guion y 3 o 4 dígitos (HGO-001).
-	reClaveHospital = regexp.MustCompile(`^[A-Za-z]{2,5}-[0-9]{3,4}$`)
 	// Teléfono: + opcional y de 7 a 20 caracteres entre dígitos, espacios, guiones y paréntesis.
 	reTelefono = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
 	// Código postal: exactamente 5 dígitos.
@@ -37,13 +35,12 @@ var reglas = map[string]struct {
 	re      *regexp.Regexp
 	mensaje string
 }{
-	"nombre":        {reNombre, "Usa solo letras, espacios, punto, apóstrofo o guion"},
-	"textogeneral":  {reTextoGeneral, "Usa solo letras, números, espacios y . , # / ( ) ' & + - °"},
-	"numdomicilio":  {reNumDomicilio, "Usa solo letras, números, espacios y # / . -"},
-	"codigo":        {reCodigo, "Usa solo letras sin acento, números y guion"},
-	"clavehospital": {reClaveHospital, "Usa el prefijo del estado, guion y 3 o 4 dígitos (HGO-001)"},
-	"telefono":      {reTelefono, "Escribe un teléfono válido (solo números, espacios, guiones o +)"},
-	"cp":            {reCP, "El código postal tiene 5 dígitos"},
+	"nombre":       {reNombre, "Usa solo letras, espacios, punto, apóstrofo o guion"},
+	"textogeneral": {reTextoGeneral, "Usa solo letras, números, espacios y . , # / ( ) ' & + - °"},
+	"numdomicilio": {reNumDomicilio, "Usa solo letras, números, espacios y # / . -"},
+	"codigo":       {reCodigo, "Usa solo letras sin acento, números y guion"},
+	"telefono":     {reTelefono, "Escribe un teléfono válido (solo números, espacios, guiones o +)"},
+	"cp":           {reCP, "El código postal tiene 5 dígitos"},
 }
 
 func nuevoValidador() *validator.Validate {

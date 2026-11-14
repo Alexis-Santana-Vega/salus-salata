@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 	"time"
 
@@ -21,10 +22,10 @@ func NewHospitales(db *sql.DB) *Hospitales { return &Hospitales{db: db} }
 
 // DatosHospital es lo que se captura en alta y edición.
 type DatosHospital struct {
-	Clave, Nombre, Telefono, LigaMapa string
-	Direccion                         model.Direccion
-	Latitud, Longitud                 *float64
-	Contactos                         []model.Contacto
+	Nombre, Telefono, LigaMapa string
+	Direccion                  model.Direccion
+	Latitud, Longitud          *float64
+	Contactos                  []model.Contacto
 }
 
 func (d DatosHospital) modelo(id model.ID) model.Hospital {
@@ -32,7 +33,7 @@ func (d DatosHospital) modelo(id model.ID) model.Hospital {
 	for i, c := range d.Contactos {
 		cs[i] = model.Contacto{Nombre: limpiar(c.Nombre), Puesto: limpiar(c.Puesto), Telefono: limpiar(c.Telefono)}
 	}
-	return model.Hospital{ID: id, Clave: strings.ToUpper(limpiar(d.Clave)), Nombre: limpiar(d.Nombre),
+	return model.Hospital{ID: id, Nombre: limpiar(d.Nombre),
 		Telefono: limpiar(d.Telefono), LigaMapa: strings.TrimSpace(d.LigaMapa), Direccion: limpiarDireccion(d.Direccion),
 		Latitud: d.Latitud, Longitud: d.Longitud, Contactos: cs}
 }
@@ -53,8 +54,9 @@ func (s *Hospitales) Actualizar(ctx context.Context, id model.ID, d DatosHospita
 	return s.guardar(ctx, d.modelo(id), false)
 }
 
-// guardar valida el prefijo de la clave contra el estado de la colonia y
-// escribe hospital y contactos en UNA transacción: todo o nada.
+// guardar escribe hospital y contactos en UNA transacción: todo o nada. En el
+// alta genera la clave: abreviatura del estado de la colonia y su consecutivo
+// (HGO-001). Después la clave no cambia.
 func (s *Hospitales) guardar(ctx context.Context, h model.Hospital, nuevo bool) (*model.Hospital, error) {
 	ahora := time.Now().UTC()
 	h.ActualizadoEn = ahora
@@ -63,21 +65,23 @@ func (s *Hospitales) guardar(ctx context.Context, h model.Hospital, nuevo bool) 
 	}
 	var out *model.Hospital
 	err := enTx(ctx, s.db, func(tx *sql.Tx) error {
-		estado, err := repository.NewDirecciones(tx).EstadoDeAsentamiento(ctx, *h.Direccion.AsentamientoID)
-		if err != nil {
-			return err
-		}
-		if prefijo, _, _ := strings.Cut(h.Clave, "-"); prefijo != estado {
-			return ErrCampo{Campo: "clave", Mensaje: "La clave debe empezar con " + estado + " (el estado de la colonia)"}
-		}
-
 		repo := repository.NewHospitales(tx)
+		var err error
 		if nuevo {
+			estado, err := repository.NewDirecciones(tx).EstadoDeAsentamiento(ctx, *h.Direccion.AsentamientoID)
+			if err != nil {
+				return err
+			}
+			n, err := repository.Siguiente(ctx, tx, "HOSPITAL:"+estado)
+			if err != nil {
+				return err
+			}
+			h.Clave = fmt.Sprintf("%s-%03d", estado, n)
 			err = repo.Crear(ctx, h)
-		} else {
-			err = repo.Actualizar(ctx, h)
-		}
-		if err != nil {
+			if err != nil {
+				return err
+			}
+		} else if err = repo.Actualizar(ctx, h); err != nil {
 			return err
 		}
 		if err := repo.ReemplazarContactos(ctx, h.ID, h.Contactos); err != nil {

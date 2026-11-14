@@ -43,6 +43,8 @@ func mensaje(fe validator.FieldError) string {
 	switch fe.Tag() {
 	case "required":
 		return "Este campo es obligatorio"
+	case "required_if":
+		return "Este campo es obligatorio"
 	case "email":
 		return "Escribe un correo válido"
 	case "min":

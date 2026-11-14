@@ -10,7 +10,6 @@ import (
 type InsumosHandler struct{ Svc *service.Insumos }
 
 type insumoReq struct {
-	Clave        string   `json:"clave" validate:"required,max=30,codigo"`
 	Descripcion  string   `json:"descripcion" validate:"required,max=200,textogeneral"`
 	Unidad       string   `json:"unidad" validate:"required,oneof=PIEZA CAJA PAQUETE"`
 	Precio       *float64 `json:"precio" validate:"required,gte=0,lte=9999999999,dosdecimales"`
@@ -20,7 +19,7 @@ type insumoReq struct {
 }
 
 func (r insumoReq) datos() service.DatosInsumo {
-	return service.DatosInsumo{Clave: r.Clave, Descripcion: r.Descripcion, Unidad: r.Unidad, Precio: *r.Precio,
+	return service.DatosInsumo{Descripcion: r.Descripcion, Unidad: r.Unidad, Precio: *r.Precio,
 		CodigoBarras: r.CodigoBarras, StockActual: *r.StockActual, StockMinimo: *r.StockMinimo}
 }
 

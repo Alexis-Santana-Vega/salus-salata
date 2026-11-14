@@ -79,9 +79,6 @@ export const numDomicilio = formato(/^[\p{L}\p{N}][\p{L}\p{N} #/.-]*$/u, 'Usa so
 // Códigos y claves (DOC-001, GTO-001).
 export const codigo = formato(/^[A-Z0-9][A-Z0-9-]*$/i, 'Usa solo letras sin acento, números y guion')
 
-// Clave de hospital: prefijo del estado, guion y 3 o 4 dígitos (HGO-001).
-export const claveHospital = formato(/^[A-Z]{2,5}-\d{3,4}$/i, 'Usa el prefijo del estado, guion y 3 o 4 dígitos (HGO-001)')
-
 // Número decimal opcional dentro de un rango (latitud, longitud).
 export function rango (min: number, max: number, nombre: string): Regla {
   return v => {
@@ -111,4 +108,10 @@ export const dinero: Regla = v => {
 export const enteroPositivo: Regla = v => {
   const t = texto(v).trim()
   return t === '' || (/^\d{1,7}$/.test(t) && Number(t) <= 1_000_000) || 'Escribe un número entero de 0 a 1,000,000'
+}
+
+// Entero mayor a cero (ciclo, purga cada cuántos usos).
+export const enteroMayorACero: Regla = v => {
+  const t = texto(v).trim()
+  return t === '' || (/^\d{1,6}$/.test(t) && Number(t) >= 1 && Number(t) <= 100_000) || 'Escribe un número entero de 1 a 100,000'
 }
