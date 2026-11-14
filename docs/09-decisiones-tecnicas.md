@@ -125,6 +125,7 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 |---|---|
 | Mensajes de campos | Sin `hideDetails: 'auto'`: cada campo reserva el espacio del mensaje y no salta al validar. Solo `campo-busqueda` usa `hide-details`. |
 | Pantallas de acceso | `AuthLayout`: panel de marca (color primario, frase sin nombre de usuario y animación Lottie `public/hospital-lottie.json`) + formulario con la marca centrada y pie legal. En móvil solo el formulario. Lo usan login y cambio de contraseña. |
+| Pestañas viejas | Tras un despliegue, una pestaña abierta pide archivos de pantallas que ya cambiaron de nombre (404). `router.onError` detecta el error de carga y recarga la app en la pantalla destino (una vez por destino cada 10 s). El login no borra la contraseña antes de confirmar la navegación. |
 | Lottie | `lottie-web` build *light* (sin `eval`, compatible con la CSP), en el componente `AnimacionLottie`; respeta "reducir movimiento". |
 | Producción | `docker-compose.prod.yml` encima del base: solo nginx publica puertos, HTTPS obligatorio con HSTS, `APP_ENV=production`, sin `/docs`, sin CORS, cookies `Secure`, logs JSON. Certificados en `infra/certs/` (no se suben). |
 | Pruebas | `scripts/prueba-integracion.sh`, `scripts/prueba-seguridad.sh` (ataques) y `scripts/prueba-produccion.sh`. `backend/cmd/hash` genera hashes para usuarios temporales de prueba. |

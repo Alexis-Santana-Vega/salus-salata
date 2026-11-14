@@ -81,11 +81,14 @@
     cargando.value = true
     try {
       await auth.login(usuario.value, contrasenaValor.value)
-      contrasenaValor.value = ''
       // Solo rutas internas: evita redirigir a otro sitio con ?volver=.
       const v = route.query.volver
       const volver = typeof v === 'string' && v.startsWith('/') && !v.startsWith('//') ? v : '/'
-      await router.replace(volver)
+      // La contraseña no se borra aquí: si la navegación falla, el usuario no
+      // pierde lo que escribió. Si el router no pudo navegar (p. ej. la pestaña
+      // quedó vieja tras un despliegue), se entra recargando la app.
+      const fallo = await router.replace(volver)
+      if (fallo) window.location.assign(volver)
     } catch (error_) {
       error.value = error_ instanceof ApiError ? error_.mensaje : 'Algo salió mal. Intenta de nuevo.'
     } finally {

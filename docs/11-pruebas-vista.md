@@ -23,6 +23,7 @@ Guía completa en este archivo. Antes de construir un paso se escribe su matriz;
 | G10 | Abrir `/…/<id inexistente>` | 404 dentro del layout |
 | G11 | Eliminar desde la tabla (web) o desde la edición (móvil) | Diálogo rojo → toast → desaparece |
 | G12 | Móvil | Tarjetas con chevron; formulario en una columna; acciones fijas abajo |
+| G13 | Pestaña abierta antes de un despliegue nuevo: iniciar sesión (o navegar) | La app se recarga sola y llega a la pantalla destino; la contraseña no se borra si algo falla |
 
 G1–G12 recorridos el 2026-11-14 en Procedimientos y Técnicos: ✔ (paginación móvil y web, orden asc/desc, recarga en edición, 404 con id inexistente o mal formado, Cancelar sin guardar).
 

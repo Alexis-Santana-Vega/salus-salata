@@ -51,6 +51,33 @@ const router = createRouter({
   ],
 })
 
+// Tras un despliegue nuevo, una pestaña que ya estaba abierta pide archivos de
+// pantallas que ya no existen (cambian de nombre en cada build) y la navegación
+// falla en silencio. En ese caso se recarga la app directo en la pantalla
+// destino. Solo una vez por destino cada 10 s para no ciclar si el servidor cae.
+const ERROR_DE_CARGA = /dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload CSS/i
+
+export function recargarEn (destino: string) {
+  const clave = `salus.recarga:${destino}`
+  try {
+    const antes = Number(sessionStorage.getItem(clave) || 0)
+    if (Date.now() - antes < 10_000) {
+      return false
+    }
+    sessionStorage.setItem(clave, String(Date.now()))
+  } catch {
+    // almacenamiento bloqueado: se recarga igual
+  }
+  window.location.assign(destino)
+  return true
+}
+
+router.onError((error, to) => {
+  if (ERROR_DE_CARGA.test(String(error?.message ?? error))) {
+    recargarEn(to.fullPath)
+  }
+})
+
 router.beforeEach(async to => {
   const auth = useAuthStore()
   await auth.iniciar() // recupera la sesión con la cookie la primera vez
