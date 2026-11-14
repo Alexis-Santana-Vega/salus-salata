@@ -5,22 +5,25 @@ Plataforma de renta de equipo médico e insumos para cirugías.
 ```
 backend/    API en Go (Fiber v3)
 frontend/   Vue 3 + Vuetify + TypeScript (pnpm)
-docs/       Análisis, requerimientos, modelo de datos, diseño y plan
+infra/      Configuración de Firebird (alias)
+docs/       Análisis, requerimientos, modelo de datos, diseño, plan y arquitectura
 ```
 
 ## Requisitos
 Git, Go 1.27+, Node 26+, pnpm 12+ y Docker. **No usar npm.**
 
-## Desarrollo local
-
-Base de datos (Firebird 5 con alias `salus`, ver [docs/07-firebird-alias.md](docs/07-firebird-alias.md)):
+## Levantar todo con Docker
 ```bash
 copy .env.example .env
-docker compose up -d db
+docker compose up -d --build
 ```
+- API: http://localhost:8080/api/v1/health
+- Documentación (Scalar): http://localhost:8080/docs (con `DOCS_ENABLED=true`)
+- Firebird: `127.0.0.1:3050`, alias `salus` ([docs/07-firebird-alias.md](docs/07-firebird-alias.md))
 
-Backend (http://localhost:8080/health):
+## Desarrollo local sin contenedor del backend
 ```bash
+docker compose up -d db
 cd backend
 go run ./cmd/api
 ```
@@ -32,4 +35,10 @@ pnpm install
 pnpm dev
 ```
 
-El plan por fases está en [docs/06-plan-de-trabajo.md](docs/06-plan-de-trabajo.md).
+## Pruebas
+```bash
+cd backend && go vet ./... && go test ./...
+cd frontend && pnpm lint && pnpm build
+```
+
+Arquitectura: [docs/08-arquitectura.md](docs/08-arquitectura.md) · Plan: [docs/06-plan-de-trabajo.md](docs/06-plan-de-trabajo.md)

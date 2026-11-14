@@ -27,6 +27,10 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - Estructura idiomática y simple: `cmd/api` + `internal/` con `config`, `database`, `model`, `repository`, `service`, `handler`, `router`, `middleware`. **Sin sobreingeniería**: nada de capas o interfaces que no se usen.
 - Secretos y configuración por variables de entorno; `.env` nunca se sube (solo `.env.example`).
 - SQL parametrizado siempre.
+- Respuestas solo con `internal/response` (`OK`, `Created`, `List`, `NoContent` y los errores `*response.Error`); nunca `c.JSON` con formas propias.
+- Migraciones en `internal/database/migrations/NNNN_descripcion.sql`; una migración aplicada **no se edita**, se crea otra.
+- Logs con `slog`; nunca registrar contraseñas, tokens, cookies ni cuerpos de petición.
+- La API se conecta a Firebird con `SALUS_APP`, nunca con SYSDBA.
 
 ## API (consistente en todo el proyecto)
 - REST, versión en la ruta: `/api/v1/...`; recursos en plural y en español (`/api/v1/hospitales`).
@@ -56,7 +60,7 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 ```bash
 # Backend
 cd backend && go run ./cmd/api
-cd backend && go vet ./... && go build ./...
+cd backend && go vet ./... && go test ./...
 
 # Frontend
 cd frontend && pnpm dev

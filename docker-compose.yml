@@ -13,6 +13,12 @@ services:
       # Archivo físico que se crea la primera vez (dentro del volumen).
       FIREBIRD_DATABASE: salus.fdb
       FIREBIRD_DATABASE_DEFAULT_CHARSET: UTF8
+      # Endurecimiento: solo se pueden abrir bases dentro del volumen de datos.
+      # (Por defecto "Full" permite abrir cualquier ruta del contenedor.)
+      FIREBIRD_CONF_DatabaseAccess: Restrict /var/lib/firebird/data
+      # Explícitos aunque ya son el valor por defecto en Firebird 5:
+      FIREBIRD_CONF_AuthServer: Srp256
+      FIREBIRD_CONF_WireCrypt: Required
     volumes:
       - salus-db-data:/var/lib/firebird/data
       # Nuestro databases.conf con el alias "salus" reemplaza al de la imagen.
@@ -26,6 +32,39 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        VERSION: 0.3.0
+    image: salus-backend:0.3.0
+    container_name: salus-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      TZ: America/Mexico_City
+      APP_ENV: ${APP_ENV:-development}
+      PORT: "8080"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DOCS_ENABLED: ${DOCS_ENABLED:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      # Dentro de la red de compose la BD se llama "db" y se entra por el alias.
+      FIREBIRD_HOST: db
+      FIREBIRD_PORT: "3050"
+      FIREBIRD_DB_ALIAS: ${FIREBIRD_DB_ALIAS:?Falta FIREBIRD_DB_ALIAS en .env}
+      FIREBIRD_USER: ${FIREBIRD_USER}
+      FIREBIRD_PASSWORD: ${FIREBIRD_PASSWORD}
+    ports:
+      # Desarrollo: solo desde esta máquina. En producción no se publica (paso 0.6).
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
 volumes:
   salus-db-data:

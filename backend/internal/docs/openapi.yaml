@@ -1,0 +1,85 @@
+openapi: 3.1.0
+info:
+  title: SALUS API
+  version: 0.3.0
+  description: |
+    API de SALUS para la renta de equipo médico e insumos.
+
+    **Convenciones**
+    - Rutas versionadas: `/api/v1/...`, recursos en plural y en español.
+    - JSON en `camelCase`.
+    - Éxito: `{ "data": ... }`; listados: `{ "data": [...], "meta": { page, pageSize, total } }`.
+    - Error: `{ "error": { code, message, details?, requestId } }` con el código HTTP correcto.
+    - Cada respuesta trae la cabecera `X-Request-ID` para rastrearla en el log.
+servers:
+  - url: /api/v1
+tags:
+  - name: Sistema
+    description: Estado del servicio
+paths:
+  /health:
+    get:
+      tags: [Sistema]
+      summary: Estado de la API y de la base de datos
+      operationId: getHealth
+      responses:
+        '200':
+          description: La API y la base de datos responden
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Health'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, database, version, time]
+      properties:
+        status: { type: string, example: ok }
+        database: { type: string, example: ok }
+        version: { type: string, example: 0.3.0 }
+        time: { type: string, format: date-time }
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field: { type: string, example: correo }
+        message: { type: string, example: El correo no es válido }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                [BAD_REQUEST, VALIDATION_ERROR, UNAUTHORIZED, FORBIDDEN, NOT_FOUND,
+                 METHOD_NOT_ALLOWED, CONFLICT, PAYLOAD_TOO_LARGE, TOO_MANY_REQUESTS,
+                 INTERNAL_ERROR, SERVICE_UNAVAILABLE]
+            message: { type: string }
+            details:
+              type: array
+              items: { $ref: '#/components/schemas/FieldError' }
+            requestId: { type: string }
+  responses:
+    ServiceUnavailable:
+      description: Un servicio necesario (p. ej. la base de datos) no responde
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Se superó el límite de peticiones por minuto
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
