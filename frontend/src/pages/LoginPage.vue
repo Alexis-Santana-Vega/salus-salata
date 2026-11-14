@@ -14,7 +14,7 @@
 
         <v-expand-transition>
           <v-col v-if="error" cols="12">
-            <v-alert color="error" icon="$error" :text="error" />
+            <alerta-formulario :text="error" />
           </v-col>
         </v-expand-transition>
 

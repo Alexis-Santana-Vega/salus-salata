@@ -44,7 +44,7 @@ func Setup(app *fiber.App, d Deps) {
 	v1.Post("/auth/refresh", auth.Refresh)
 	v1.Post("/auth/logout", auth.Logout)
 	v1.Get("/auth/me", sesionPendiente, auth.Me)
-	v1.Put("/auth/contrasena", sesionPendiente, auth.CambiarContrasena)
+	v1.Put("/auth/contrasena", middleware.LoginLimiter(), sesionPendiente, auth.CambiarContrasena)
 
 	// --- Usuarios (solo Sysadmin) ---
 	usuarios := handler.UsuariosHandler{Svc: d.Usuarios}

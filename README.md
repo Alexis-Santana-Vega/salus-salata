@@ -12,11 +12,14 @@ docs/       Análisis, requerimientos, modelo de datos, diseño, plan y arquitec
 ## Requisitos
 Git, Go 1.27+, Node 26+, pnpm 12+ y Docker. **No usar npm.**
 
-## Levantar todo con Docker
+## Entornos
+Hay un entorno de **pruebas** y uno de **producción**, cada uno con su base. Guía completa: [docs/10-entornos.md](docs/10-entornos.md).
 ```bash
-copy .env.example .env
-docker compose up -d --build
+bash scripts/entorno.sh pruebas up
+bash scripts/entorno.sh produccion up
 ```
+
+## Entorno de pruebas
 - App: http://localhost:8081 (nginx, puerta única)
 - API directa (solo desarrollo): http://localhost:8080/api/v1/health
 - Documentación (Scalar): http://localhost:8080/docs (con `DOCS_ENABLED=true`)

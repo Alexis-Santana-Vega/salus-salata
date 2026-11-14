@@ -5,8 +5,10 @@
       <btn-icono aria-label="Abrir menú" icon="$menu" @click="app.drawer = !app.drawer" />
     </template>
 
-    <v-app-bar-title v-if="mobile" class="text-center">
-      <span class="text-title-medium font-weight-semibold">Salus Salata</span>
+    <v-app-bar-title v-if="mobile">
+      <div class="d-flex justify-center">
+        <app-marca tamano="32" />
+      </div>
     </v-app-bar-title>
 
     <campo-busqueda v-else aria-label="Buscar" max-width="460" placeholder="Buscar cirugía, equipo o insumo…">
@@ -65,6 +67,7 @@
 <script lang="ts" setup>
   import { useRouter } from 'vue-router'
   import { useDisplay } from 'vuetify'
+  import AppMarca from '@/components/AppMarca.vue'
   import { useAppStore } from '@/stores/app'
   import { NOMBRE_ROL, useAuthStore } from '@/stores/auth'
 

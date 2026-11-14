@@ -13,8 +13,8 @@ probar() { if [ "$2" = "$3" ]; then ok=$((ok+1)); echo "  ✔ $1"; else mal=$((m
 cod() { curl -sk -o "$T/r" -w '%{http_code}' "$@"; }
 
 echo "Superficie expuesta"
-probar "backend NO responde directo en :8080" 000 "$(curl -s -o /dev/null -m 3 -w '%{http_code}' http://localhost:8080/api/v1/health)"
-probar "Firebird NO responde en :3050" 1 "$(timeout 3 bash -c '</dev/tcp/127.0.0.1/3050' 2>/dev/null && echo 0 || echo 1)"
+probar "backend sin puertos publicados" 0 "$(docker compose ps backend --format '{{.Ports}}' | grep -c -- '->')"
+probar "Firebird sin puertos publicados" 0 "$(docker compose ps db --format '{{.Ports}}' | grep -c -- '->')"
 probar "HTTP redirige a HTTPS (301)" 301 "$(curl -s -o /dev/null -w '%{http_code}' $P/login)"
 probar "redirección apunta a https" 1 "$(curl -s -D - -o /dev/null $P/ | grep -ci '^location: https://')"
 
@@ -34,7 +34,7 @@ probar "login fallido responde 401 por HTTPS" 401 "$(cod -H 'Content-Type: appli
 probar "logs del backend en JSON" 1 "$(docker compose logs backend --no-log-prefix --tail 5 | grep -c '^{"time"' | awk '{print ($1>0)?1:0}')"
 probar "backend en modo production" 1 "$(docker compose logs backend --no-log-prefix | grep -c '"env":"production"' | awk '{print ($1>0)?1:0}')"
 
-sql() { docker exec -i salus-db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
+sql() { docker compose exec -T db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
 # Usuario temporal para ver la cookie de una sesión real.
 PASS="Prod-$(head -c 12 /dev/urandom | base64 | tr -d '/+=')"
 HASH=$(printf '%s\n' "$PASS" | (cd backend && PATH="$PATH:/c/Program Files/Go/bin" go run ./cmd/hash))

@@ -1,9 +1,6 @@
-<!-- Logo + nombre. El logo cambia con el tema (claro/oscuro). -->
+<!-- Logo de la marca. Cambia con el tema (claro/oscuro). Solo el ícono, sin el nombre. -->
 <template>
-  <div class="d-flex align-center">
-    <v-img alt="" :src="logo" width="40" />
-    <span class="text-title-large font-weight-semibold">Salus Salata</span>
-  </div>
+  <v-img alt="Salus Salata" :src="logo" :width="tamano" />
 </template>
 
 <script lang="ts" setup>
@@ -11,6 +8,8 @@
   import { useTheme } from 'vuetify'
   import logoClaro from '@/assets/logo-claro.webp'
   import logoOscuro from '@/assets/logo-oscuro.webp'
+
+  withDefaults(defineProps<{ tamano?: number | string }>(), { tamano: 40 })
 
   const theme = useTheme()
   const logo = computed(() => theme.global.current.value.dark ? logoOscuro : logoClaro)

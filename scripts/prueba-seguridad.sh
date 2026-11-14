@@ -5,6 +5,8 @@
 # usuario, sesiones y bitácora de prueba (también quita los bloqueos).
 # Tarda ~4 min: respeta el límite de 10 logins/min por IP entre bloques.
 set -u
+# Estas pruebas borran usuarios y bitácora: NUNCA contra producción.
+if [ "${COMPOSE_PROJECT_NAME:-salus-pruebas}" = "salus-prod" ]; then echo "Estas pruebas solo corren en el entorno de pruebas."; exit 1; fi
 cd "$(dirname "$0")/.."
 F=http://localhost:${FRONTEND_PORT:-8081}
 A=$F/api/v1
@@ -14,7 +16,7 @@ ok=0; mal=0
 probar() { if [ "$2" = "$3" ]; then ok=$((ok+1)); echo "  ✔ $1"; else mal=$((mal+1)); echo "  ✘ $1 (esperado $2, obtenido $3)"; fi; }
 cod() { curl -s -o "$T/r" -w '%{http_code}' "$@"; }
 codigo() { grep -oE '"code":"[A-Z_]+"' "$T/r" | head -1 | cut -d'"' -f4; }
-sql() { docker exec -i salus-db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
+sql() { docker compose exec -T db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
 esperar() { echo "  … esperando 61 s (límite de login por minuto)"; sleep 61; }
 b64url() { base64 -w0 | tr '+/' '-_' | tr -d '='; }
 
@@ -73,6 +75,7 @@ esperar
 echo "5. Fuerza bruta y enumeración de usuarios"
 for i in 1 2 3 4 5; do cod -H "$J" -d '{"usuario":"atacante","contrasena":"incorrecta-123"}' $A/auth/login >/dev/null; done
 probar "6.º intento sobre la cuenta → 429 aunque la contraseña sea correcta" 429 "$(cod -H "$J" -d "{\"usuario\":\"atacante\",\"contrasena\":\"$PASS\"}" $A/auth/login)"
+probar "cambio de contraseña comparte el bloqueo de la cuenta → 429" 429 "$(cod -X PUT -H "$J" -H "Authorization: Bearer $TOK" -d "{\"contrasenaActual\":\"$PASS\",\"contrasenaNueva\":\"Otra-Contrasena-2026\"}" $A/auth/contrasena)"
 t1=$(curl -s -o /dev/null -w '%{time_total}' -H "$J" -d '{"usuario":"no-existe-xyz","contrasena":"incorrecta-123"}' $A/auth/login)
 t2=$(curl -s -o /dev/null -w '%{time_total}' -H "$J" -d '{"usuario":"admin","contrasena":"incorrecta-123"}' $A/auth/login)
 probar "tiempos parecidos con usuario existente e inexistente (<2x)" 1 "$(awk -v a="$t1" -v b="$t2" 'BEGIN{r=(a>b)?a/b:b/a; print (r<2)?1:0}')"

@@ -6,7 +6,7 @@
  * Si un componente se ve distinto en toda la app, se cambia aquí.
  */
 import { createVuetify } from 'vuetify'
-import { VBtn, VTextField } from 'vuetify/components'
+import { VAlert, VBtn, VTextField } from 'vuetify/components'
 import { es } from 'vuetify/locale'
 import { aliases, lucide } from './icons'
 import 'vuetify/styles'
@@ -87,6 +87,7 @@ export default createVuetify({
     BtnPrimario: VBtn, // acción principal: sólido con sombra leve
     BtnIcono: VBtn, // solo icono, sin borde ni fondo
     CampoBusqueda: VTextField, // buscador junto a tablas y en el header
+    AlertaFormulario: VAlert, // alerta arriba de los campos de un formulario
   },
 
   // Estilo por defecto de cada componente. Aquí viven las decisiones de diseño.
@@ -115,6 +116,9 @@ export default createVuetify({
 
     VCard: { elevation: 0, border: true, rounded: 'lg' },
     VAlert: { variant: 'tonal', color: 'info', rounded: 'lg', border: false },
+    // Margen inferior = espacio de mensajes que reservan los campos, para que
+    // la alerta no quede pegada al primer campo (regla de formularios, docs/09).
+    AlertaFormulario: { variant: 'tonal', color: 'error', icon: '$error', rounded: 'lg', class: 'mb-5' },
     VChip: { variant: 'tonal', rounded: 'lg', size: 'small' },
     VSnackbar: { color: 'surface', elevation: 3, rounded: 'lg', location: 'top right', timeout: 4000 },
     VDialog: { maxWidth: 560 },

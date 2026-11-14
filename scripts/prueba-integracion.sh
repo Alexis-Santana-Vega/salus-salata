@@ -5,6 +5,8 @@
 # como estaba: borra usuarios, sesiones y auditoría de prueba para que el
 # Sysadmin inicial se vuelva a crear con la contraseña de .env.
 set -u
+# Estas pruebas borran usuarios y bitácora: NUNCA contra producción.
+if [ "${COMPOSE_PROJECT_NAME:-salus-pruebas}" = "salus-prod" ]; then echo "Estas pruebas solo corren en el entorno de pruebas."; exit 1; fi
 cd "$(dirname "$0")/.."
 F=http://localhost:${FRONTEND_PORT:-8081}
 B=http://localhost:8080
@@ -17,7 +19,7 @@ probar() { # probar "descripción" esperado obtenido
   if [ "$2" = "$3" ]; then ok=$((ok+1)); echo "  ✔ $1"; else mal=$((mal+1)); echo "  ✘ $1 (esperado $2, obtenido $3)"; fi
 }
 cod() { curl -s -o "$T/r" -w '%{http_code}' "$@"; }
-sql() { docker exec -i salus-db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
+sql() { docker compose exec -T db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
 
 echo "Frontend (nginx)"
 probar "GET / sirve la app" 200 "$(cod $F/)"

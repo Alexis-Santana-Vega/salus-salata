@@ -117,4 +117,8 @@ Registro de lo que **ya está decidido y validado**. Antes de proponer algo, rev
 | Pruebas | `scripts/prueba-integracion.sh`, `scripts/prueba-seguridad.sh` (ataques) y `scripts/prueba-produccion.sh`. `backend/cmd/hash` genera hashes para usuarios temporales de prueba. |
 | PWA | Instalable (manifest + iconos + theme-color), **sin service worker ni modo sin conexión**. Logos claro/oscuro en `src/assets`, `AppMarca` cambia según el tema. |
 | Contraseñas | Componente `CampoContrasena` (ojo para mostrar/ocultar) en todos los campos de contraseña. |
+| Alertas de formulario | Alias `AlertaFormulario` con `mb-5`: única excepción a "sin márgenes"; compensa el espacio de mensajes que reservan los campos. |
+| Marca | `AppMarca` muestra solo el logo (sin el nombre). |
+| Cambio de contraseña | Comparte el bloqueo del login: cada contraseña actual incorrecta cuenta como intento fallido de la cuenta y de la IP; además, límite de 10/min. |
+| Entornos | Pruebas y producción como proyectos compose separados (`salus-pruebas` / `salus-prod`) con su propio volumen, red, puertos y secretos; `scripts/entorno.sh`; respaldos con `gbak` y copia de producción a pruebas. Ver `10-entornos.md`. |
 | Sesión | Token de acceso 15 min; sesión renovable 7 días desde el último uso (`REFRESH_TOKEN_TTL`). |

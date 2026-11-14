@@ -1,6 +1,6 @@
 # CLAUDE.md · Reglas del proyecto SALUS
 
-SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura). Consúltalos antes de implementar algo del negocio.
+SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura, 09 decisiones técnicas, 10 entornos). Consúltalos antes de implementar algo del negocio.
 
 **`docs/09-decisiones-tecnicas.md` es la fuente de verdad técnica**: léelo antes de diseñar o escribir código. No contradigas ni reinventes lo que ahí está decidido; si algo debe cambiar, propónlo al usuario. Cada decisión nueva que se valide se agrega ahí.
 
@@ -62,7 +62,8 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 - **Transiciones de Vuetify** (`v-fade-transition`, `v-expand-transition`, etc.) cuando algo aparece o desaparece; sin animaciones CSS propias.
 - Fuentes: Poppins para títulos, Inter para texto.
 - **Antes de construir o ajustar una pantalla, leer su artboard del mock** (https://claude.ai/artifact/3VR1enc7SDGVFu464sF8xg, `project/<Pantalla>.dc.html`, y `Componentes.dc.html` para elementos de UI) y seguirlo: estructura, textos y jerarquía. No inventar diseño.
-- Componentes de UI del mock ya hechos: `PageHeader` (título + subtítulo + acciones), `AppMarca`, `ErrorPagina` (404/403/500/503). Reusarlos, no repetir su diseño a mano.
+- Componentes ya hechos: `PageHeader` (título + subtítulo + acciones), `AppMarca` (solo el logo, cambia con el tema; sin el nombre al lado), `ErrorPagina` (404/403/500/503), `CampoContrasena` (con ojo), `AnimacionLottie`, `AuthLayout` (login y cambio de contraseña). Reusarlos, no repetir su diseño a mano.
+- **Formularios**: la alerta de error arriba de los campos es `alerta-formulario` (alias con `mb-5`): es la **única excepción a la regla de márgenes**, porque los campos reservan abajo el espacio de sus mensajes y sin ese margen la alerta queda pegada al primer campo.
 - **Espaciado estandarizado** (detalle en `docs/09` › Espaciado): grid primero (`v-row` density comfortable / `v-col`); en `d-flex` solo `ga-2` (relacionados) o `ga-4` (grupos); `pa-4` solo en contenedores sin padding propio; **nunca márgenes** (`ma-*`, `mt-*`…). Densidad `comfortable` global; `v-list` con `slim` y sin `nav`.
 - Tipografía con las clases MD3 de Vuetify 4 (`text-headline-small`, `text-title-large`, `text-body-medium`, `text-label-large`…), no `text-h*`.
 - Páginas de error dentro del dashboard se pintan en el área de contenido, centradas (nunca reemplazan sidebar ni header).
@@ -90,3 +91,9 @@ cd frontend && pnpm lint && pnpm build
 # Todo
 docker compose up -d
 ```
+
+## Entornos (detalle en `docs/10-entornos.md`)
+- Dos entornos independientes: **pruebas** (`.env`, http://localhost:8081, API :8080) y **producción** (`.env.produccion`, https://localhost:8443), cada uno con su base.
+- Todo con `bash scripts/entorno.sh <pruebas|produccion> <up|down|ps|logs|probar|respaldar>`.
+- Todo se desarrolla y prueba en **pruebas**; a producción solo lo que pasó las pruebas, y siempre con `respaldar` antes de `up`.
+- `prueba-integracion.sh` y `prueba-seguridad.sh` son destructivas: solo en pruebas (se niegan en producción).

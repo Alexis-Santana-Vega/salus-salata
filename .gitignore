@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.produccion.example
 
 # Sistema / editores
 .DS_Store
@@ -32,3 +33,6 @@ data/
 
 # Certificados TLS (nunca se suben)
 infra/certs/
+
+# Respaldos de la base (nunca se suben)
+respaldos/

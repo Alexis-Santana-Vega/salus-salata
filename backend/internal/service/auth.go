@@ -217,11 +217,26 @@ func (a *Auth) CambiarContrasena(ctx context.Context, usuarioID int64, actual, n
 	if err != nil || !u.Activo {
 		return nil, ErrSesionInvalida
 	}
+
+	// Mismo bloqueo que el login: con un token robado no se puede adivinar
+	// la contraseña actual a fuerza de intentos.
+	auditoria := repository.NewAuditoria(a.db)
+	porIdent, porIP, err := auditoria.FallidosDesde(ctx, u.Usuario, o.IP, ahora.Add(-VentanaIntentos))
+	if err != nil {
+		return nil, err
+	}
+	if porIdent >= MaxFallidosPorCuenta || porIP >= MaxFallidosPorIP {
+		a.auditar(ctx, model.EventoLoginBloqueado, u.ID, u.Usuario, o)
+		return nil, ErrDemasiadosIntentos
+	}
+
 	ok, err := security.VerifyPassword(actual, u.HashContrasena)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
+		// Cuenta como intento fallido de la cuenta (comparte el contador del login).
+		a.auditar(ctx, model.EventoLoginFallido, u.ID, u.Usuario, o)
 		return nil, ErrCredenciales
 	}
 	if err := ValidarContrasena(nueva, u.Usuario, u.Correo); err != nil {
