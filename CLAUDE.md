@@ -4,6 +4,17 @@ SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. E
 
 **`docs/09-decisiones-tecnicas.md` es la fuente de verdad técnica**: léelo antes de diseñar o escribir código. No contradigas ni reinventes lo que ahí está decidido; si algo debe cambiar, propónlo al usuario. Cada decisión nueva que se valide se agrega ahí.
 
+## Arranque de cada sesión (seguir en orden, sin adivinar)
+1. **Dónde vamos**: leer `docs/06-plan-de-trabajo.md` (los pasos con ✅ están hechos) y `docs/09-decisiones-tecnicas.md`. Siguiente trabajo: el primer paso sin ✅ (hoy: **Fase 1 · Catálogos núcleo**).
+2. **Máquina nueva o recién clonada**: `bash scripts/preparar.sh` (crea `.env`, `.env.produccion` y certificados de prueba solo si faltan; instala dependencias del front). Requisitos: Git, Go 1.27+, Node 24+ con pnpm 12, Docker Desktop encendido.
+3. **Levantar el entorno de trabajo** (siempre pruebas): `bash scripts/entorno.sh pruebas up`. Comprobar con `bash scripts/entorno.sh pruebas probar`.
+4. **Desarrollar**: front con recarga en `cd frontend && pnpm dev` (http://localhost:3000, usa el backend de pruebas en :8080). Backend: editar y volver a correr `entorno.sh pruebas up` (recompila la imagen), o `docker compose stop backend` + `cd backend && go run ./cmd/api`.
+5. **Antes de dar un paso por terminado**: `go vet ./... && go test ./...`, `pnpm lint && pnpm build`, `entorno.sh pruebas probar` y, si se tocó seguridad, `bash scripts/prueba-seguridad.sh` (~5 min). Commit y push.
+6. **Producción solo cuando el usuario lo pida**: `entorno.sh produccion respaldar` → `entorno.sh produccion up` → `entorno.sh produccion probar`. Nunca se desarrolla ni se prueba en producción.
+7. **Al cerrar la sesión**: `entorno.sh pruebas down` (y `produccion down` si se levantó), detener `pnpm dev`, commit y push.
+
+Cliente de base de datos del usuario: **DBeaver** (pruebas: `127.0.0.1:3050`, base `salus`, usuario `SALUS_APP`, contraseña `FIREBIRD_PASSWORD` de `.env`).
+
 ## Forma de trabajo
 - Avanzar por **pasos cortos** del plan (`docs/06-plan-de-trabajo.md`). Cada paso se entrega funcionando y se revisa antes del siguiente.
 - No adelantar trabajo de otros pasos aunque parezca fácil.

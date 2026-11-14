@@ -10,7 +10,13 @@ docs/       Análisis, requerimientos, modelo de datos, diseño, plan y arquitec
 ```
 
 ## Requisitos
-Git, Go 1.27+, Node 26+, pnpm 12+ y Docker. **No usar npm.**
+Git, Go 1.27+, Node 24+, pnpm 12+ y Docker Desktop. **No usar npm.** En Windows, los scripts se corren con Git Bash.
+
+## Primer arranque en una máquina nueva
+```bash
+bash scripts/preparar.sh
+bash scripts/entorno.sh pruebas up
+```
 
 ## Entornos
 Hay un entorno de **pruebas** y uno de **producción**, cada uno con su base. Guía completa: [docs/10-entornos.md](docs/10-entornos.md).

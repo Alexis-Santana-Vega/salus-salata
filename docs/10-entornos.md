@@ -11,11 +11,14 @@ Hay **dos entornos completos e independientes**. Cada uno es un proyecto de dock
 | Base de datos | volumen `salus-pruebas_salus-db-data` | volumen `salus-prod_salus-db-data` |
 | App | http://localhost:8081 | https://localhost:8443 (en el servidor: 443) |
 | API directa / `/docs` | http://localhost:8080, Scalar activo | No expuesta, sin `/docs` |
-| Firebird | `127.0.0.1:3050` (Beekeeper) | No expuesto |
+| Firebird | `127.0.0.1:3050` (DBeaver) | No expuesto |
 | Cookies / logs | Sin `Secure` / texto | `Secure` + HSTS / JSON |
 | Red interna | `172.28.0.0/24`, nginx `172.28.0.10` | `172.29.0.0/24`, nginx `172.29.0.10` |
 
 Los secretos de producción (`.env.produccion`), los certificados (`infra/certs/`) y los respaldos (`respaldos/`) **nunca se suben a git**.
+
+## Máquina nueva
+`bash scripts/preparar.sh` crea lo que git no guarda (`.env`, `.env.produccion`, certificados de prueba) solo si falta, e instala las dependencias del front. Si quieres conservar los mismos datos y secretos de otra máquina, copia esos archivos y un respaldo `.fbk` en vez de generarlos.
 
 ## Comandos
 Todo pasa por `scripts/entorno.sh` para no equivocarse de entorno:
@@ -47,7 +50,7 @@ Para desarrollar con recarga en caliente: levantar **pruebas** y correr `pnpm de
 - Para restaurar se usa el mismo mecanismo de `copiar-a-pruebas` (`gbak -rep` como `SALUS_APP`, con el backend detenido).
 
 ## Servidor de producción (cuando exista)
-1. Clonar el repo, crear `.env.produccion` desde `.env.produccion.example` con secretos nuevos.
+1. Clonar el repo y correr `bash scripts/preparar.sh` (crea `.env.produccion` con secretos nuevos).
 2. Poner el certificado del dominio en `infra/certs/salus.crt` y `salus.key`.
 3. En `.env.produccion`: `BIND_IP=0.0.0.0`, `HTTP_PORT=80`, `HTTPS_PORT=443`; en `frontend/nginx.prod.conf` la redirección a `https://$host$request_uri`.
 4. `bash scripts/entorno.sh produccion up` y `bash scripts/entorno.sh produccion probar`.

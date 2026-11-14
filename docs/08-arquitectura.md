@@ -29,7 +29,7 @@ flowchart TB
 | Frontend → backend | `/api/v1/...` (mismo origen; nginx o Vite reenvían a `http://backend:8080`) |
 | Backend → Firebird (compose) | `firebirdsql://SALUS_APP:••••@db:3050/salus?charset=UTF8&wire_crypt=true&auth_plugin_name=Srp256` |
 | Backend → Firebird (`go run` local) | igual, con host `127.0.0.1` |
-| Beekeeper Studio / isql (desarrollo) | host `127.0.0.1` · puerto `3050` · base `salus` · usuario `SALUS_APP` |
+| DBeaver / isql (desarrollo) | host `127.0.0.1` · puerto `3050` · base `salus` · usuario `SALUS_APP` |
 | Documentación de la API (desarrollo) | `http://localhost:8080/docs` |
 
 La contraseña nunca va escrita en el código: se arma desde `.env`.
