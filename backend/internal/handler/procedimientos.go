@@ -10,7 +10,7 @@ import (
 type ProcedimientosHandler struct{ Svc *service.Procedimientos }
 
 type procedimientoReq struct {
-	Nombre string `json:"nombre" validate:"required,max=120,texto"`
+	Nombre string `json:"nombre" validate:"required,max=120,textogeneral"`
 }
 
 func (r procedimientoReq) datos() service.DatosProcedimiento {

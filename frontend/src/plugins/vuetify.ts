@@ -103,14 +103,16 @@ export default createVuetify({
     BtnPeligro: { variant: 'elevated', color: 'error', elevation: 2, rounded: 'lg' },
 
     // Campos: siempre outlined con la etiqueta en el borde.
-    VTextField: { variant: 'outlined', color: 'primary', rounded: 'lg' },
-    VTextarea: { variant: 'outlined', color: 'primary', rounded: 'lg' },
+    VTextField: { variant: 'outlined', color: 'primary', rounded: 'lg', counter: true },
     VSelect: { variant: 'outlined', color: 'primary', rounded: 'lg' },
     VAutocomplete: { variant: 'outlined', color: 'primary', rounded: 'lg' },
     VCombobox: { variant: 'outlined', color: 'primary', rounded: 'lg' },
+    // Contador de caracteres en todo campo de texto: el tope lo da `maxlength` de
+    // cada campo (que además impide escribir de más). Se ve al enfocar.
+    VTextarea: { variant: 'outlined', color: 'primary', rounded: 'lg', counter: true },
     CampoBusqueda: {
       variant: 'outlined', rounded: 'lg', hideDetails: true, singleLine: true,
-      prependInnerIcon: '$buscar', placeholder: 'Buscar', color: 'primary',
+      prependInnerIcon: '$buscar', placeholder: 'Buscar', color: 'primary', counter: false,
     },
 
     // Grid: los espacios entre bloques salen de aquí (ver docs/09 › Espaciado).

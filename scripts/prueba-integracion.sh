@@ -30,6 +30,9 @@ reiniciar_limites() {
 }
 sql() { docker compose exec -T db sh -c 'isql -q -user "$FIREBIRD_USER" -password "$FIREBIRD_PASSWORD" localhost:salus'; }
 
+# Parte del admin con la contraseña inicial de .env (sin importar si se cambió a mano).
+bash scripts/usuarios-prueba.sh admin >/dev/null
+
 echo "Frontend (nginx)"
 probar "GET / sirve la app" 200 "$(cod $F/)"
 probar "SPA: /login sirve index.html" 200 "$(cod $F/login)"
@@ -59,10 +62,7 @@ A=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "Sysadmin entra a /usuarios" 200 "$(cod -H "Authorization: Bearer $A" $F/api/v1/usuarios)"
 
 # Parte de catálogos vacíos: lo que se probó a mano en la vista no interfiere.
-printf 'DELETE FROM DOCTOR;
-DELETE FROM TECNICO;
-DELETE FROM PROCEDIMIENTO;
-COMMIT;
+printf 'DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nCOMMIT;
 ' | sql
 echo "Catálogo de procedimientos (patrón CRUD)"
 AU="Authorization: Bearer $A"
@@ -116,7 +116,7 @@ DC=$F/api/v1/doctores
 probar "alta mínima (nombre + correo) → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dr. Aguayo","correo":"Aguayo@Mail.com"}' $DC)"
 DID=$(grep -oE '"id":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "correo se guarda en minúsculas" 1 "$(grep -c '"correo":"aguayo@mail.com"' $T/r)"
-probar "alta completa con colonia del catálogo → 201" 201 "$(cod -H "$AU" -H "$J" -d "{\"numero\":\"doc-001\",\"nombre\":\"Dr. Westendarp\",\"correo\":\"west@mail.com\",\"telPersonal\":\"477 111 2222\",\"direccion\":{\"calle\":\"Av. Juárez\",\"numExterior\":\"434\",\"asentamientoId\":\"$ASEN\"}}" $DC)"
+probar "alta completa con colonia del catálogo → 201" 201 "$(cod -H "$AU" -H "$J" -d "{\"numero\":\"doc-001\",\"nombre\":\"Dr. Westendarp\",\"correo\":\"west@mail.com\",\"telPersonal\":\"477 111 2222\",\"direccion\":{\"calle\":\"Av. Juarez\",\"numExterior\":\"434\",\"asentamientoId\":\"$ASEN\"}}" $DC)"
 probar "la respuesta completa C.P., municipio y estado" 1 "$(grep -c '"cp":"42000","colonia":"Centro","municipio":"Pachuca de Soto","estado":"HGO"' $T/r)"
 probar "número en mayúsculas" 1 "$(grep -c '"numero":"DOC-001"' $T/r)"
 probar "número repetido → 409 en numero" 1 "$(cod -H "$AU" -H "$J" -d '{"numero":"DOC-001","nombre":"X","correo":"x@mail.com"}' $DC >/dev/null; grep -c '"field":"numero"' $T/r)"
@@ -125,7 +125,34 @@ probar "colonia que no existe en el catálogo → 422 en asentamientoId" 1 "$(co
 probar "correo inválido → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"X","correo":"no-es-correo"}' $DC)"
 probar "búsqueda por correo → 1" 1 "$(cod -H "$AU" "$DC?q=west@" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
 probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $DC/$DID)"
-probar "correo de uno dado de baja se reusa → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dr. Aguayo 2","correo":"aguayo@mail.com"}' $DC)"
+probar "correo de uno dado de baja se reusa → 201" 201 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Dr. Aguayo Segundo","correo":"aguayo@mail.com"}' $DC)"
+
+reiniciar_limites
+echo "Catálogo de hospitales"
+HC=$F/api/v1/hospitales
+CUERPO_H='{"clave":"hgo-001","nombre":"Hospital Angeles Pachuca","telefono":"771 123 4567","direccion":{"calle":"Av Revolucion","numExterior":"434","asentamientoId":"'$ASEN'"},"latitud":20.1,"longitud":-98.7,"ligaMapa":"https://maps.google.com/?q=pachuca","contactos":[{"nombre":"Juan Perez","puesto":"Quirofano","telefono":"771 000 1111"},{"nombre":"Ana Lopez","puesto":"Almacen"}]}'
+probar "alta con 2 contactos → 201" 201 "$(cod -H "$AU" -H "$J" -d "$CUERPO_H" $HC)"
+HID=$(grep -oE '"id":"[^"]+"' $T/r | head -1 | cut -d'"' -f4)
+probar "clave en mayúsculas" 1 "$(grep -c '"clave":"HGO-001"' $T/r)"
+probar "contactos en el orden capturado" 1 "$(grep -c '"contactos":\[{"nombre":"Juan Perez".*{"nombre":"Ana Lopez"' $T/r)"
+probar "dirección completa desde el catálogo" 1 "$(grep -c '"municipio":"Pachuca de Soto","estado":"HGO"' $T/r)"
+probar "clave repetida → 409 en clave" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/Angeles/Otro}" $HC >/dev/null; grep -c '"field":"clave"' $T/r)"
+probar "prefijo distinto al estado de la colonia → 422 en clave" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/hgo-001/GTO-002}" $HC >/dev/null; grep -c '"field":"clave","message":"La clave debe empezar con HGO' $T/r)"
+probar "clave sin formato → 422" 422 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/hgo-001/HGO001}" $HC)"
+probar "latitud fuera de rango → 422" 422 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/20.1/200}" $HC)"
+probar "liga sin https → 422" 422 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/https:/http:}" $HC)"
+probar "contacto sin nombre → 422 en contactos[1].nombre" 1 "$(cod -H "$AU" -H "$J" -d "${CUERPO_H/Ana Lopez/}" $HC >/dev/null; grep -c '"field":"contactos\[1\].nombre"' $T/r)"
+probar "sin dirección → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"clave":"HGO-009","nombre":"X"}' $HC)"
+probar "edición deja solo los contactos enviados → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" -d "${CUERPO_H/',{"nombre":"Ana Lopez","puesto":"Almacen"}'/}" $HC/$HID)"
+probar "queda un solo contacto" 0 "$(grep -c 'Ana Lopez' $T/r)"
+probar "búsqueda por municipio (?q=pachuca) → 1" 1 "$(cod -H "$AU" "$HC?q=pachuca" >/dev/null; grep -o '"total":[0-9]*' $T/r | cut -d: -f2)"
+probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $HC/$HID)"
+probar "la clave de uno dado de baja no se reusa → 409" 409 "$(cod -H "$AU" -H "$J" -d "$CUERPO_H" $HC)"
+
+echo "Formatos de texto"
+probar "nombre de procedimiento con ; → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Holep; DROP TABLE X"}' $P)"
+probar "nombre de técnico con llaves → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"{{x}}","puesto":"OTRO"}' $TC)"
+probar "número de doctor con espacio → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"numero":"DOC 1","nombre":"X","correo":"z@mail.com"}' $DC)"
 
 reiniciar_limites
 DPASS="Doctor-Integracion-2026"
@@ -136,13 +163,14 @@ AD=$(grep -oE '"accessToken":"[^"]+"' $T/r | cut -d'"' -f4)
 probar "rol Doctor no ve el catálogo → 403" 403 "$(cod -H "Authorization: Bearer $AD" $P)"
 probar "rol Doctor no ve los técnicos → 403" 403 "$(cod -H "Authorization: Bearer $AD" $TC)"
 probar "rol Doctor no ve el catálogo de doctores → 403" 403 "$(cod -H "Authorization: Bearer $AD" $DC)"
+probar "rol Doctor no ve los hospitales → 403" 403 "$(cod -H "Authorization: Bearer $AD" $HC)"
 probar "ruta inexistente de la API sigue en 404" 404 "$(cod -H "$AU" $F/api/v1/no-existe)"
 probar "refresh con la cookie (recarga de página)" 200 "$(curl -s -b $T/c -c $T/c -o $T/r -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 probar "logout → 204" 204 "$(curl -s -b $T/c -c $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/logout)"
 probar "refresh tras logout → 401" 401 "$(curl -s -b $T/c -o /dev/null -w '%{http_code}' -X POST $F/api/v1/auth/refresh)"
 
 echo "Limpieza"
-printf 'DELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
+printf 'DELETE FROM CONTACTO_HOSPITAL;\nDELETE FROM HOSPITAL;\nDELETE FROM DOCTOR;\nDELETE FROM TECNICO;\nDELETE FROM PROCEDIMIENTO;\nDELETE FROM AUDITORIA_ACCESO;\nDELETE FROM SESION;\nDELETE FROM USUARIO;\nCOMMIT;\n' | sql
 docker compose restart backend >/dev/null 2>&1
 rm -rf "$T"
 echo

@@ -30,13 +30,16 @@ const router = createRouter({
           component: () => import('@/pages/catalogos/CatalogosPage.vue'),
           meta: { roles: ADMINISTRACION },
           children: [
-            { path: '', redirect: '/catalogos/doctores' },
+            { path: '', redirect: '/catalogos/hospitales' },
+            { path: 'hospitales', component: () => import('@/pages/catalogos/HospitalesPage.vue') },
             { path: 'doctores', component: () => import('@/pages/catalogos/DoctoresPage.vue') },
             { path: 'tecnicos', component: () => import('@/pages/catalogos/TecnicosPage.vue') },
             { path: 'procedimientos', component: () => import('@/pages/catalogos/ProcedimientosPage.vue') },
           ],
         },
         // Altas y ediciones: página propia, fuera de las pestañas.
+        { path: 'catalogos/hospitales/alta', component: () => import('@/pages/catalogos/HospitalFormPage.vue'), meta: { roles: ADMINISTRACION } },
+        { path: 'catalogos/hospitales/:id', component: () => import('@/pages/catalogos/HospitalFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'catalogos/doctores/alta', component: () => import('@/pages/catalogos/DoctorFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'catalogos/doctores/:id', component: () => import('@/pages/catalogos/DoctorFormPage.vue'), meta: { roles: ADMINISTRACION } },
         { path: 'catalogos/tecnicos/alta', component: () => import('@/pages/catalogos/TecnicoFormPage.vue'), meta: { roles: ADMINISTRACION } },

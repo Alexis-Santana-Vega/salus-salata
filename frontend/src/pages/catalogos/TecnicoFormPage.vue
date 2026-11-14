@@ -23,10 +23,10 @@
         <v-text-field
           v-model="datos.nombre"
           autofocus
-          counter="120"
           :error-messages="errores.nombre"
           label="Nombre *"
-          :rules="[requerido, maximo(120), textoSeguro]"
+          maxlength="120"
+          :rules="[requerido, maximo(120), nombrePersona]"
           @update:model-value="limpiarError('nombre')"
         />
       </v-col>
@@ -49,6 +49,7 @@
           :error-messages="errores.telefono"
           inputmode="tel"
           label="Teléfono"
+          maxlength="20"
           :rules="[telefono, maximo(20)]"
           type="tel"
           @update:model-value="limpiarError('telefono')"
@@ -77,7 +78,7 @@
   import { useBaja } from '@/composables/useBaja'
   import { useFormulario } from '@/composables/useFormulario'
   import { PUESTOS, tecnicos } from '@/services/tecnicos'
-  import { enLista, maximo, requerido, telefono, textoSeguro } from '@/utils/rules'
+  import { enLista, maximo, nombrePersona, requerido, telefono } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()

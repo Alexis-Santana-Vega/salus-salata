@@ -349,6 +349,73 @@ paths:
         '204': { description: Dado de baja }
         '404': { $ref: '#/components/responses/Error' }
 
+  /hospitales:
+    get:
+      tags: [Hospitales]
+      summary: Listar hospitales activos (Sysadmin y Admin)
+      operationId: listarHospitales
+      security: [{ bearer: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Q'
+        - { name: sort, in: query, description: 'clave, nombre, municipio, creadoEn; con "-" adelante es descendente', schema: { type: string, default: nombre, example: -nombre } }
+      responses:
+        '200':
+          description: Página de hospitales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Hospital' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    post:
+      tags: [Hospitales]
+      summary: Alta de hospital
+      operationId: crearHospital
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Hospital' }
+      responses:
+        '201': { $ref: '#/components/responses/Hospital' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '409': { description: Clave ya registrada (aunque el hospital esté dado de baja), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /hospitales/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Hospitales]
+      summary: Consultar un hospital
+      operationId: obtenerHospital
+      security: [{ bearer: [] }]
+      responses:
+        '200': { $ref: '#/components/responses/Hospital' }
+        '404': { $ref: '#/components/responses/Error' }
+    put:
+      tags: [Hospitales]
+      summary: Editar un hospital
+      operationId: actualizarHospital
+      security: [{ bearer: [] }]
+      requestBody: { $ref: '#/components/requestBodies/Hospital' }
+      responses:
+        '200': { $ref: '#/components/responses/Hospital' }
+        '404': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+    delete:
+      tags: [Hospitales]
+      summary: Baja lógica (se conserva para el historial)
+      operationId: bajaHospital
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Dado de baja }
+        '404': { $ref: '#/components/responses/Error' }
+
+
   /codigos-postales/{cp}:
     get:
       tags: [Direcciones]
@@ -380,6 +447,22 @@ components:
     PageSize: { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
     Q: { name: q, in: query, description: Contiene el texto, sin importar acentos ni mayúsculas, schema: { type: string, maxLength: 100 } }
   requestBodies:
+    Hospital:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [clave, nombre, direccion]
+            properties:
+              clave: { type: string, example: HGO-001, description: "Prefijo = estado de la colonia; 3 o 4 dígitos; se guarda en mayúsculas; no se reusa" }
+              nombre: { type: string, maxLength: 150 }
+              telefono: { type: string, maxLength: 20 }
+              direccion: { $ref: "#/components/schemas/Direccion", description: "calle y asentamientoId obligatorios" }
+              latitud: { type: [number, "null"], minimum: -90, maximum: 90 }
+              longitud: { type: [number, "null"], minimum: -180, maximum: 180 }
+              ligaMapa: { type: string, maxLength: 500, pattern: "^https://" }
+              contactos: { type: array, maxItems: 20, items: { $ref: "#/components/schemas/Contacto" } }
     Doctor:
       required: true
       content:
@@ -420,6 +503,27 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Contacto:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: { type: string, maxLength: 120 }
+        puesto: { type: string, maxLength: 60 }
+        telefono: { type: string, maxLength: 20 }
+    Hospital:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string }
+        nombre: { type: string }
+        telefono: { type: string }
+        direccion: { $ref: "#/components/schemas/Direccion" }
+        latitud: { type: [number, "null"] }
+        longitud: { type: [number, "null"] }
+        ligaMapa: { type: string }
+        contactos: { type: array, items: { $ref: "#/components/schemas/Contacto" } }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
     Direccion:
       type: object
       description: "Dirección de México. Se envían calle, números y asentamientoId (colonia del catálogo); cp, colonia, municipio, estado y estadoNombre son solo de lectura."
@@ -528,6 +632,11 @@ components:
               items: { $ref: '#/components/schemas/FieldError' }
             requestId: { type: string }
   responses:
+    Hospital:
+      description: Hospital
+      content:
+        application/json:
+          schema: { type: object, properties: { data: { $ref: "#/components/schemas/Hospital" } } }
     Doctor:
       description: Doctor
       content:

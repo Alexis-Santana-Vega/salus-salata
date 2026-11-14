@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"salus/backend/internal/model"
 )
@@ -80,4 +81,18 @@ func valoresDireccion(a model.Direccion) []any {
 		asen = *a.AsentamientoID
 	}
 	return []any{nulo(a.Calle), nulo(a.NumExterior), nulo(a.NumInterior), asen}
+}
+
+// EstadoDeAsentamiento devuelve la abreviatura del estado de una colonia.
+func (r *Direcciones) EstadoDeAsentamiento(ctx context.Context, id model.ID) (string, error) {
+	var abr string
+	err := r.db.QueryRowContext(ctx, `
+		SELECT E.ABREVIATURA FROM ASENTAMIENTO A
+		JOIN MUNICIPIO M ON M.ID = A.MUNICIPIO_ID
+		JOIN ESTADO E ON E.ID = M.ESTADO_ID
+		WHERE A.ID = ?`, id).Scan(&abr)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrReferencia{Campo: "asentamientoId"}
+	}
+	return abr, err
 }

@@ -23,10 +23,10 @@
         <v-text-field
           v-model="datos.nombre"
           autofocus
-          counter="120"
           :error-messages="errores.nombre"
           label="Nombre del doctor *"
-          :rules="[requerido, maximo(120), textoSeguro]"
+          maxlength="120"
+          :rules="[requerido, maximo(120), nombrePersona]"
           @update:model-value="limpiarError('nombre')"
         />
       </v-col>
@@ -37,7 +37,8 @@
           :error-messages="errores.numero"
           hint="Opcional. No se repite entre doctores."
           label="Número"
-          :rules="[maximo(20), textoSeguro]"
+          maxlength="20"
+          :rules="[maximo(20), codigo]"
           @update:model-value="limpiarError('numero')"
         />
       </v-col>
@@ -49,6 +50,7 @@
           :error-messages="errores.correo"
           inputmode="email"
           label="Correo *"
+          maxlength="254"
           :rules="[requerido, maximo(254), correo]"
           type="email"
           @update:model-value="limpiarError('correo')"
@@ -61,6 +63,7 @@
           :error-messages="errores.telPersonal"
           inputmode="tel"
           label="Teléfono personal"
+          maxlength="20"
           :rules="[telefono, maximo(20)]"
           type="tel"
           @update:model-value="limpiarError('telPersonal')"
@@ -73,6 +76,7 @@
           :error-messages="errores.telConsultorio"
           inputmode="tel"
           label="Teléfono de consultorio"
+          maxlength="20"
           :rules="[telefono, maximo(20)]"
           type="tel"
           @update:model-value="limpiarError('telConsultorio')"
@@ -107,7 +111,7 @@
   import { useFormulario } from '@/composables/useFormulario'
   import { doctores } from '@/services/doctores'
   import { direccionVacia } from '@/utils/direccion'
-  import { correo, maximo, requerido, telefono, textoSeguro } from '@/utils/rules'
+  import { codigo, correo, maximo, nombrePersona, requerido, telefono } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()

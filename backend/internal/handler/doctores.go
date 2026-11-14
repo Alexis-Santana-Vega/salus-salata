@@ -13,9 +13,9 @@ type DoctoresHandler struct{ Svc *service.Doctores }
 // direccionReq: lo que se captura de una dirección (lo reusa hospital). La
 // colonia se elige del catálogo por su id; lo demás sale del catálogo.
 type direccionReq struct {
-	Calle          string    `json:"calle" validate:"max=120,texto"`
-	NumExterior    string    `json:"numExterior" validate:"max=20,texto"`
-	NumInterior    string    `json:"numInterior" validate:"max=20,texto"`
+	Calle          string    `json:"calle" validate:"omitempty,max=120,textogeneral"`
+	NumExterior    string    `json:"numExterior" validate:"omitempty,max=20,numdomicilio"`
+	NumInterior    string    `json:"numInterior" validate:"omitempty,max=20,numdomicilio"`
 	AsentamientoID *model.ID `json:"asentamientoId"`
 }
 
@@ -24,8 +24,8 @@ func (r direccionReq) modelo() model.Direccion {
 }
 
 type doctorReq struct {
-	Numero         string       `json:"numero" validate:"max=20,texto"`
-	Nombre         string       `json:"nombre" validate:"required,max=120,texto"`
+	Numero         string       `json:"numero" validate:"omitempty,max=20,codigo"`
+	Nombre         string       `json:"nombre" validate:"required,max=120,nombre"`
 	Correo         string       `json:"correo" validate:"required,max=254,email"`
 	TelPersonal    string       `json:"telPersonal" validate:"omitempty,telefono"`
 	TelConsultorio string       `json:"telConsultorio" validate:"omitempty,telefono"`

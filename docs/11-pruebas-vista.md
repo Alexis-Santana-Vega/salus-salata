@@ -71,3 +71,32 @@ G1–G12 recorridos el 2026-11-14 en Procedimientos y Técnicos: ✔ (paginació
 | D18 | Borrar el C.P. al editar | Se guarda sin dirección del catálogo | ✔ |
 
 Primer recorrido 2026-11-14: D1–D13 ✔. Con el catálogo de C.P. (dirección normalizada) se rehicieron D4, D6, D7 y se agregaron D14–D18: todos ✔ (la lista de colonias también filtra al escribir).
+
+## Formatos de texto (aplica a todos los formularios)
+
+| # | Caso | Esperado | Resultado |
+|---|---|---|---|
+| F1 | Escribir más del máximo | El campo no deja pasar del tope y el contador lo muestra | ✔ |
+| F2 | Nombre de persona con números, `{ }`, `;`, `<` o emoji | Error de formato en el campo (y 422 en la API) | ✔ |
+| F3 | Nombre con acentos, ñ, punto, apóstrofo o guion ("Dra. María-José O'Neil Peña") | Se acepta | ✔ |
+| F4 | Clave o número con espacios o acentos | Error de formato | ✔ |
+
+## 1.4 Hospitales y contactos
+
+| # | Caso | Esperado | Resultado |
+|---|---|---|---|
+| H1 | Guardar vacío | Error en Clave, Nombre, Calle y C.P./Colonia | ✔ |
+| H2 | Clave sin prefijo de estado válido ("XYZ-001", "GTO001") | Error de formato en Clave | ✔ |
+| H3 | Clave "hgo-001" con colonia de Hidalgo | Se guarda "HGO-001" | ✔ |
+| H4 | Clave con prefijo distinto al estado de la colonia ("GTO-001" con C.P. de Pachuca) | Error en Clave: el prefijo debe ser HGO | ✔ |
+| H5 | Clave repetida (aunque el otro esté dado de baja) | Error en Clave | ✔ |
+| H6 | Latitud 200 o longitud -500 | Error en el campo | ✔ |
+| H7 | Liga del mapa sin https | Error en el campo | ✔ |
+| H8 | Alta con 2 contactos | Se guardan los dos, en el mismo orden | ✔ |
+| H9 | Contacto sin nombre | Error en el nombre de ese contacto | ✔ |
+| H10 | Editar: quitar un contacto y agregar otro | Quedan exactamente los de la pantalla | ✔ |
+| H11 | Listado | Clave, nombre, ciudad, teléfono y contacto principal | ✔ |
+| H12 | Buscar por clave, nombre o municipio | Lo encuentra | ✔ |
+| H13 | Eliminar | Diálogo, toast, sale del listado | ✔ |
+
+Recorrido 2026-11-14 (web, qa-admin): F1–F4 y H1–H13 ✔ (H5 y H13 también por API). Hallazgos corregidos al probar: las reglas de formato validaban antes de quitar espacios de los extremos ("  Holep" se rechazaba) y el CHECK de clave de hospital necesitaba escapar el guion en `SIMILAR TO`.

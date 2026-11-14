@@ -10,7 +10,7 @@ import (
 type TecnicosHandler struct{ Svc *service.Tecnicos }
 
 type tecnicoReq struct {
-	Nombre   string `json:"nombre" validate:"required,max=120,texto"`
+	Nombre   string `json:"nombre" validate:"required,max=120,nombre"`
 	Puesto   string `json:"puesto" validate:"required,oneof=AYUDANTE ENFERMERIA ANESTESIOLOGIA LOGISTICA OTRO"`
 	Telefono string `json:"telefono" validate:"omitempty,telefono"`
 }

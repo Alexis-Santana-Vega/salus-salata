@@ -6,6 +6,7 @@
   <v-text-field
     v-model="valor"
     :append-inner-icon="visible ? '$ocultar' : '$ver'"
+    :counter="false"
     maxlength="128"
     :type="visible ? 'text' : 'password'"
     @click:append-inner="visible = !visible"

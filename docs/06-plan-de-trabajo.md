@@ -42,7 +42,7 @@ Cada paso se entrega y se revisa antes de seguir.
 | **1.1 Patrón CRUD + Procedimientos** ✅ | Piezas reutilizables en back (listado con `q`/`sort`, baja lógica, 409 por duplicado) y front (listado tabla/tarjetas, formulario por secciones, acciones, diálogo de baja, estado vacío, toast). Primer catálogo: Procedimientos | Alta, edición, baja, búsqueda y orden en móvil y web; Doctor recibe 403 |
 | **1.2 Técnicos** ✅ | Puesto como lista cerrada (CHECK + oneof + select), teléfono opcional validado igual en back y front | Se hace copiando el patrón |
 | **1.3 Doctores** ✅ | Número opcional y único para siempre, correo único entre activos, dirección normalizada con catálogo de C.P. (SEPOMEX/INEGI) | Matriz D1–D18 en `docs/11` |
-| 1.4 Hospitales + contactos | Primer registro con detalle hijo; misma dirección desglosada | Agregar y quitar contactos |
+| **1.4 Hospitales + contactos** ✅ | Clave con prefijo del estado de su colonia, dirección obligatoria del catálogo, coordenadas y liga https, contactos en la misma transacción | Matriz H1–H13 en `docs/11` |
 | 1.5 Insumos + `CLAVE_CATALOGO` | Clave y código de barras únicos, stock ≥ 0 y mínimo | Una clave de insumo no puede repetir una de equipo |
 | 1.6 Equipo + tarifa | Modelo con purga opcional y tarifa con vigencia | Cambiar el costo deja historial |
 | 1.7 Unidades de equipo | Unidades en el alta y en un equipo existente, clave `EQ-001-01` automática | — |

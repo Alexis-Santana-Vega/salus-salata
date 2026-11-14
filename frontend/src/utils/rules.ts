@@ -57,3 +57,43 @@ export const cp: Regla = v =>
 export function enLista (opciones: readonly { value: string }[]): Regla {
   return v => v == null || v === '' || opciones.some(o => o.value === v) || 'Elige una opción de la lista'
 }
+
+/*
+ * Formatos de texto libre: listas BLANCAS iguales a las del back
+ * (backend/internal/handler/reglas.go). Todo lo demás se rechaza, incluidos
+ * < > { } [ ] \ ` $ | ^ ~ = * % " ; caracteres de control y emojis.
+ */
+function formato (re: RegExp, msg: string): Regla {
+  return v => texto(v).trim().length === 0 || re.test(texto(v).trim()) || msg
+}
+
+// Nombres de personas: letras (con acentos y ñ), espacios, punto, apóstrofo y guion.
+export const nombrePersona = formato(/^[\p{L}\p{M}][\p{L}\p{M} .'-]*$/u, 'Usa solo letras, espacios, punto, apóstrofo o guion')
+
+// Texto general (procedimientos, calles, puestos, nombres de hospital).
+export const textoGeneral = formato(/^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} .,#/()'&+°-]*$/u, 'Usa solo letras, números, espacios y . , # / ( ) \' & + - °')
+
+// Número exterior o interior ("120-B", "S/N").
+export const numDomicilio = formato(/^[\p{L}\p{N}][\p{L}\p{N} #/.-]*$/u, 'Usa solo letras, números, espacios y # / . -')
+
+// Códigos y claves (DOC-001, GTO-001).
+export const codigo = formato(/^[A-Z0-9][A-Z0-9-]*$/i, 'Usa solo letras sin acento, números y guion')
+
+// Clave de hospital: prefijo del estado, guion y 3 o 4 dígitos (HGO-001).
+export const claveHospital = formato(/^[A-Z]{2,5}-\d{3,4}$/i, 'Usa el prefijo del estado, guion y 3 o 4 dígitos (HGO-001)')
+
+// Número decimal opcional dentro de un rango (latitud, longitud).
+export function rango (min: number, max: number, nombre: string): Regla {
+  return v => {
+    const t = texto(v).trim()
+    if (t === '') {
+      return true
+    }
+    const n = Number(t)
+    return (/^-?\d+(?:\.\d+)?$/.test(t) && n >= min && n <= max) || `${nombre} entre ${min} y ${max}`
+  }
+}
+
+// Liga opcional: debe ser https://
+export const ligaHttps: Regla = v =>
+  texto(v).trim().length === 0 || /^https:\/\/[^\s<>"]+$/.test(texto(v).trim()) || 'Escribe una liga completa que empiece con https://'

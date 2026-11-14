@@ -3,10 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"reflect"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
@@ -14,38 +11,8 @@ import (
 	"salus/backend/internal/response"
 )
 
-// Teléfono: + opcional y de 7 a 20 caracteres entre dígitos, espacios, guiones y paréntesis.
-// Código postal: exactamente 5 dígitos.
-var (
-	reTelefono = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
-	reCP       = regexp.MustCompile(`^[0-9]{5}$`)
-)
-
 // validate es seguro para uso concurrente y cachea las reglas de cada struct.
-var validate = func() *validator.Validate {
-	v := validator.New(validator.WithRequiredStructEnabled())
-	// Los errores usan el nombre del campo JSON, no el de Go.
-	v.RegisterTagNameFunc(func(f reflect.StructField) string {
-		nombre := strings.SplitN(f.Tag.Get("json"), ",", 2)[0]
-		if nombre == "-" {
-			return ""
-		}
-		return nombre
-	})
-	// "texto": texto libre sin etiquetas HTML (misma regla que textoSeguro del front).
-	_ = v.RegisterValidation("texto", func(fl validator.FieldLevel) bool {
-		return !strings.ContainsAny(fl.Field().String(), "<>")
-	})
-	// "cp": código postal de 5 dígitos (dominio D_CP).
-	_ = v.RegisterValidation("cp", func(fl validator.FieldLevel) bool {
-		return reCP.MatchString(fl.Field().String())
-	})
-	// "telefono": dígitos con espacios, guiones, paréntesis y + opcional (misma regla del front).
-	_ = v.RegisterValidation("telefono", func(fl validator.FieldLevel) bool {
-		return reTelefono.MatchString(fl.Field().String())
-	})
-	return v
-}()
+var validate = nuevoValidador()
 
 // bind lee el cuerpo JSON en dst y lo valida con las etiquetas `validate`.
 // Los campos desconocidos se ignoran: así el cliente puede mandar campos
@@ -61,7 +28,7 @@ func bind(c fiber.Ctx, dst any) error {
 		}
 		detalles := make([]response.FieldError, 0, len(ves))
 		for _, fe := range ves {
-			detalles = append(detalles, response.FieldError{Field: fe.Field(), Message: mensaje(fe)})
+			detalles = append(detalles, response.FieldError{Field: campo(fe), Message: mensaje(fe)})
 		}
 		return response.Validation(detalles...)
 	}
@@ -70,6 +37,9 @@ func bind(c fiber.Ctx, dst any) error {
 
 // mensaje traduce cada regla a un texto para el usuario.
 func mensaje(fe validator.FieldError) string {
+	if r, ok := reglas[fe.Tag()]; ok {
+		return r.mensaje
+	}
 	switch fe.Tag() {
 	case "required":
 		return "Este campo es obligatorio"
@@ -79,14 +49,22 @@ func mensaje(fe validator.FieldError) string {
 		return "Usa al menos " + fe.Param() + " caracteres"
 	case "max":
 		return "Usa como máximo " + fe.Param() + " caracteres"
-	case "texto":
-		return "No uses los caracteres < ni >"
-	case "cp":
-		return "El código postal tiene 5 dígitos"
-	case "telefono":
-		return "Escribe un teléfono válido (solo números, espacios, guiones o +)"
 	case "oneof":
 		return "Elige una opción de la lista"
+	case "gte":
+		return "Debe ser mayor o igual a " + fe.Param()
+	case "lte":
+		return "Debe ser menor o igual a " + fe.Param()
+	case "startswith":
+		return "Debe empezar con " + fe.Param()
+	case "url":
+		return "Escribe una liga completa (https://…)"
+	case "latitude":
+		return "Latitud entre -90 y 90"
+	case "longitude":
+		return "Longitud entre -180 y 180"
+	case "dive", "min_items", "maxitems":
+		return "Revisa la lista"
 	}
 	return "Valor no válido"
 }

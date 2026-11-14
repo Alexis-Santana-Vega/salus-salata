@@ -9,6 +9,7 @@ import { ApiError } from '@/services/api'
 import { useAvisosStore } from '@/stores/avisos'
 
 interface Opciones<T, D> {
+  enviar?: (datos: D) => unknown // transforma los datos antes de mandarlos (p. ej. texto → número)
   id: Ref<string | undefined> // sin id = alta
   vacio: () => D // valores iniciales del alta
   desde: (registro: T) => D // registro → campos del formulario
@@ -52,7 +53,8 @@ export function useFormulario<T, D extends object> (recurso: Recurso<T, D>, op: 
     }
     guardando.value = true
     try {
-      const d = toRaw(datos) as D
+      const crudo = toRaw(datos) as D
+      const d = (op.enviar ? op.enviar(crudo) : crudo) as D
       const registro = op.id.value ? await recurso.actualizar(op.id.value, d) : await recurso.crear(d)
       avisos.exito(op.id.value ? op.mensajes.actualizado : op.mensajes.creado)
       op.alGuardar(registro)

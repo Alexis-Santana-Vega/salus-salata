@@ -23,10 +23,10 @@
         <v-text-field
           v-model="datos.nombre"
           autofocus
-          counter="120"
           :error-messages="errores.nombre"
           label="Nombre *"
-          :rules="[requerido, maximo(120), textoSeguro]"
+          maxlength="120"
+          :rules="[requerido, maximo(120), textoGeneral]"
           @update:model-value="limpiarError('nombre')"
         />
       </v-col>
@@ -53,7 +53,7 @@
   import { useBaja } from '@/composables/useBaja'
   import { useFormulario } from '@/composables/useFormulario'
   import { procedimientos } from '@/services/procedimientos'
-  import { maximo, requerido, textoSeguro } from '@/utils/rules'
+  import { maximo, requerido, textoGeneral } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()

@@ -9,8 +9,9 @@
       v-model="d.calle"
       autocomplete="address-line1"
       :error-messages="errores.calle"
-      label="Calle"
-      :rules="[maximo(120), textoSeguro]"
+      :label="obligatoria ? 'Calle *' : 'Calle'"
+      maxlength="120"
+      :rules="[...(obligatoria ? [requerido] : []), maximo(120), textoGeneral]"
       @update:model-value="emit('limpiar', 'calle')"
     />
   </v-col>
@@ -20,7 +21,8 @@
       v-model="d.numExterior"
       :error-messages="errores.numExterior"
       label="Núm. exterior"
-      :rules="[maximo(20), textoSeguro]"
+      maxlength="20"
+      :rules="[maximo(20), numDomicilio]"
       @update:model-value="emit('limpiar', 'numExterior')"
     />
   </v-col>
@@ -30,7 +32,8 @@
       v-model="d.numInterior"
       :error-messages="errores.numInterior"
       label="Núm. interior"
-      :rules="[maximo(20), textoSeguro]"
+      maxlength="20"
+      :rules="[maximo(20), numDomicilio]"
       @update:model-value="emit('limpiar', 'numInterior')"
     />
   </v-col>
@@ -39,13 +42,14 @@
     <v-text-field
       v-model="cpCaptura"
       autocomplete="postal-code"
+      :counter="false"
       :error-messages="errorCP"
       hint="Llena la colonia, el municipio y el estado"
       inputmode="numeric"
-      label="C.P."
+      :label="obligatoria ? 'C.P. *' : 'C.P.'"
       :loading="buscando"
       maxlength="5"
-      :rules="[cp]"
+      :rules="[...(obligatoria ? [requerido] : []), cp]"
     />
   </v-col>
 
@@ -57,7 +61,7 @@
       item-title="nombre"
       item-value="id"
       :items="colonias"
-      label="Colonia"
+      :label="obligatoria ? 'Colonia *' : 'Colonia'"
       no-data-text="Sin colonias para ese C.P."
       :rules="[reglaColonia]"
       @update:model-value="elegir"
@@ -69,11 +73,23 @@
   </v-col>
 
   <v-col cols="12" md="6">
-    <v-text-field label="Ciudad o municipio" :model-value="d.municipio" readonly :rules="[]" />
+    <v-text-field
+      :counter="false"
+      label="Ciudad o municipio"
+      :model-value="d.municipio"
+      readonly
+      :rules="[]"
+    />
   </v-col>
 
   <v-col cols="12" md="6">
-    <v-text-field label="Estado" :model-value="d.estadoNombre" readonly :rules="[]" />
+    <v-text-field
+      :counter="false"
+      label="Estado"
+      :model-value="d.estadoNombre"
+      readonly
+      :rules="[]"
+    />
   </v-col>
 </template>
 
@@ -83,9 +99,12 @@
   import { onMounted, ref, shallowRef, watch } from 'vue'
   import { ApiError } from '@/services/api'
   import { coloniasPorCP } from '@/services/direcciones'
-  import { cp, maximo, textoSeguro } from '@/utils/rules'
+  import { cp, maximo, numDomicilio, requerido, textoGeneral } from '@/utils/rules'
 
-  defineProps<{ errores: Record<string, string[] | undefined> }>()
+  const props = defineProps<{
+    errores: Record<string, string[] | undefined>
+    obligatoria?: boolean // hospital: calle y colonia obligatorias
+  }>()
   const emit = defineEmits<{ limpiar: [campo: string] }>()
   const d = defineModel<Direccion>({ required: true })
 
@@ -95,7 +114,7 @@
   const errorCP = ref<string[]>([])
 
   // Con C.P. capturado, la colonia es obligatoria (es lo que se guarda).
-  const reglaColonia = () => !cpCaptura.value || !!d.value.asentamientoId || 'Elige la colonia'
+  const reglaColonia = () => ((!props.obligatoria && !cpCaptura.value) || !!d.value.asentamientoId) || 'Elige la colonia'
 
   let turno = 0
   async function buscar (valor: string) {

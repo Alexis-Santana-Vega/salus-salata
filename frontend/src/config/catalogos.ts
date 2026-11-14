@@ -10,6 +10,11 @@ export interface PestanaCatalogo {
 
 export const pestanasCatalogos: PestanaCatalogo[] = [
   {
+    titulo: 'Hospitales',
+    to: '/catalogos/hospitales',
+    nuevo: { texto: 'Nuevo hospital', to: '/catalogos/hospitales/alta' },
+  },
+  {
     titulo: 'Doctores',
     to: '/catalogos/doctores',
     nuevo: { texto: 'Nuevo doctor', to: '/catalogos/doctores/alta' },
