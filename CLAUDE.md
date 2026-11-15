@@ -1,11 +1,11 @@
 # CLAUDE.md · Reglas del proyecto SALUS
 
-SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura, 09 decisiones técnicas, 10 entornos, 11 pruebas en vista). Consúltalos antes de implementar algo del negocio.
+SALUS renta equipo médico y surte insumos a varios hospitales para cirugías. El contexto completo está en `docs/` (01 análisis, 02 requerimientos, 03 modelo de datos, 04 pendientes, 05 guía de diseño, 06 plan de trabajo, 07 alias de Firebird, 08 arquitectura, 09 decisiones técnicas, 10 entornos, 11 pruebas en vista, 12 contexto para continuar). Consúltalos antes de implementar algo del negocio.
 
 **`docs/09-decisiones-tecnicas.md` es la fuente de verdad técnica**: léelo antes de diseñar o escribir código. No contradigas ni reinventes lo que ahí está decidido; si algo debe cambiar, propónlo al usuario. Cada decisión nueva que se valide se agrega ahí.
 
 ## Arranque de cada sesión (seguir en orden, sin adivinar)
-1. **Dónde vamos**: leer `docs/06-plan-de-trabajo.md` (los pasos con ✅ están hechos) y `docs/09-decisiones-tecnicas.md`. Siguiente trabajo: el primer paso sin ✅ (hoy: **Fase 1 · Catálogos núcleo**).
+1. **Dónde vamos**: leer primero `docs/12-contexto-sesion.md` (estado, forma de trabajo y cómo seguir), luego `docs/06-plan-de-trabajo.md` (los pasos con ✅ están hechos) y `docs/09-decisiones-tecnicas.md`. Siguiente trabajo: el primer paso sin ✅ (hoy: **1.7 Unidades de equipo**).
 2. **Máquina nueva o recién clonada**: `bash scripts/preparar.sh` (crea `.env`, `.env.produccion` y certificados de prueba solo si faltan; instala dependencias del front). Requisitos: Git, Go 1.27+, Node 24+ con pnpm 12, Docker Desktop encendido.
 3. **Levantar el entorno de trabajo** (siempre pruebas): `bash scripts/entorno.sh pruebas up`. Comprobar con `bash scripts/entorno.sh pruebas probar`.
 4. **Desarrollar**: front con recarga en `cd frontend && pnpm dev` (http://localhost:3000, usa el backend de pruebas en :8080). Backend: editar y volver a correr `entorno.sh pruebas up` (recompila la imagen), o `docker compose stop backend` + `cd backend && go run ./cmd/api`.
