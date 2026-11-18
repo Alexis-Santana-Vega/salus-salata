@@ -24,6 +24,7 @@ const selectEquipo = `
 SELECT E.ID, E.CLAVE, E.NOMBRE, E.MARCA_MODELO, E.CICLO_MAX, E.REQUIERE_PURGA, E.PURGA_CADA,
        (SELECT FIRST 1 T.COSTO_HORA FROM TARIFA_EQUIPO T
          WHERE T.EQUIPO_ID = E.ID AND T.VIGENTE_DESDE <= ? ORDER BY T.VIGENTE_DESDE DESC),
+       (SELECT COUNT(*) FROM EQUIPO_UNIDAD U WHERE U.EQUIPO_ID = E.ID AND U.ACTIVO = TRUE),
        E.CREADO_EN, E.ACTUALIZADO_EN
 FROM EQUIPO E`
 
@@ -31,7 +32,7 @@ func scanEquipo(s interface{ Scan(...any) error }) (*model.Equipo, error) {
 	var e model.Equipo
 	var purga sql.NullInt64
 	var costo sql.NullString
-	err := s.Scan(&e.ID, &e.Clave, &e.Nombre, &e.MarcaModelo, &e.CicloMax, &e.RequierePurga, &purga, &costo, &e.CreadoEn, &e.ActualizadoEn)
+	err := s.Scan(&e.ID, &e.Clave, &e.Nombre, &e.MarcaModelo, &e.CicloMax, &e.RequierePurga, &purga, &costo, &e.NumUnidades, &e.CreadoEn, &e.ActualizadoEn)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNoEncontrado
 	}
@@ -44,6 +45,7 @@ func scanEquipo(s interface{ Scan(...any) error }) (*model.Equipo, error) {
 	}
 	e.CostoHora, _ = strconv.ParseFloat(costo.String, 64)
 	e.Tarifas = []model.Tarifa{}
+	e.Unidades = []model.Unidad{}
 	return &e, nil
 }
 
@@ -79,7 +81,7 @@ func (r *Equipos) Listar(ctx context.Context, q Consulta, hoy time.Time) ([]mode
 	return out, total, rows.Err()
 }
 
-// PorID devuelve el equipo con su historial de tarifas.
+// PorID devuelve el equipo con su historial de tarifas y sus unidades activas.
 func (r *Equipos) PorID(ctx context.Context, id model.ID, hoy time.Time) (*model.Equipo, error) {
 	e, err := scanEquipo(r.db.QueryRowContext(ctx, selectEquipo+` WHERE E.ID = ? AND E.ACTIVO = TRUE`, hoy, id))
 	if err != nil {
@@ -100,7 +102,80 @@ func (r *Equipos) PorID(ctx context.Context, id model.ID, hoy time.Time) (*model
 		c, _ := strconv.ParseFloat(costo, 64)
 		e.Tarifas = append(e.Tarifas, model.Tarifa{CostoHora: c, VigenteDesde: desde.Format("2006-01-02")})
 	}
-	return e, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	e.Unidades, err = r.Unidades(ctx, id)
+	return e, err
+}
+
+// Unidades devuelve las unidades activas del equipo, ordenadas por clave.
+func (r *Equipos) Unidades(ctx context.Context, equipo model.ID) ([]model.Unidad, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT ID, CLAVE, NUM_SERIE, FECHA_ALTA, USOS_PREVIOS FROM EQUIPO_UNIDAD
+		WHERE EQUIPO_ID = ? AND ACTIVO = TRUE ORDER BY CLAVE`, equipo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []model.Unidad{}
+	for rows.Next() {
+		var u model.Unidad
+		var serie sql.NullString
+		var alta time.Time
+		if err := rows.Scan(&u.ID, &u.Clave, &serie, &alta, &u.UsosPrevios); err != nil {
+			return nil, err
+		}
+		u.NumSerie, u.FechaAlta = serie.String, alta.Format("2006-01-02")
+		out = append(out, u)
+	}
+	return out, rows.Err()
+}
+
+var indicesUnidades = map[string]string{"UQ_EQUIPO_UNIDAD_SERIE": "numSerie", "UQ_EQUIPO_UNIDAD_CLAVE": "clave"}
+
+func serieSQL(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
+
+// CrearUnidad da de alta una unidad (la clave ya viene generada).
+func (r *Equipos) CrearUnidad(ctx context.Context, equipo model.ID, u model.Unidad, alta, ahora time.Time) error {
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO EQUIPO_UNIDAD (ID, EQUIPO_ID, CLAVE, NUM_SERIE, FECHA_ALTA, USOS_PREVIOS, CREADO_EN, ACTUALIZADO_EN)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, equipo, u.Clave, serieSQL(u.NumSerie), alta, u.UsosPrevios, ahora, ahora)
+	return integridad(err, indicesUnidades, nil)
+}
+
+// ActualizarUnidad cambia serie, fecha de alta y usos previos (la clave no cambia).
+func (r *Equipos) ActualizarUnidad(ctx context.Context, equipo model.ID, u model.Unidad, alta, ahora time.Time) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE EQUIPO_UNIDAD SET NUM_SERIE = ?, FECHA_ALTA = ?, USOS_PREVIOS = ?, ACTUALIZADO_EN = ?
+		WHERE ID = ? AND EQUIPO_ID = ? AND ACTIVO = TRUE`,
+		serieSQL(u.NumSerie), alta, u.UsosPrevios, ahora, u.ID, equipo)
+	if err != nil {
+		return integridad(err, indicesUnidades, nil)
+	}
+	return unaFila(res)
+}
+
+// BajaUnidades da de baja lógica las unidades indicadas del equipo (todas si ids es nil).
+func (r *Equipos) BajaUnidades(ctx context.Context, equipo model.ID, ids []model.ID, ahora time.Time) error {
+	if ids == nil {
+		_, err := r.db.ExecContext(ctx, `
+			UPDATE EQUIPO_UNIDAD SET ACTIVO = FALSE, ACTUALIZADO_EN = ? WHERE EQUIPO_ID = ? AND ACTIVO = TRUE`, ahora, equipo)
+		return err
+	}
+	for _, id := range ids {
+		if _, err := r.db.ExecContext(ctx, `
+			UPDATE EQUIPO_UNIDAD SET ACTIVO = FALSE, ACTUALIZADO_EN = ? WHERE ID = ? AND EQUIPO_ID = ?`, ahora, id, equipo); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ReservarClave registra la clave del equipo en CLAVE_CATALOGO.

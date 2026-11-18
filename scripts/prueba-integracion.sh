@@ -63,6 +63,7 @@ probar "Sysadmin entra a /usuarios" 200 "$(cod -H "Authorization: Bearer $A" $F/
 
 # Parte de catálogos vacíos: lo que se probó a mano en la vista no interfiere.
 printf 'DELETE FROM CONSECUTIVO;
+DELETE FROM EQUIPO_UNIDAD;
 DELETE FROM TARIFA_EQUIPO;
 DELETE FROM EQUIPO;
 DELETE FROM INSUMO;
@@ -201,6 +202,28 @@ probar "búsqueda por marca (?q=simai) → 1" 1 "$(cod -H "$AU" "$EC?q=simai" >/
 probar "el listado trae el costo vigente" 1 "$(cod -H "$AU" "$EC?q=gimmi" >/dev/null; grep -c '"costoHora":2000' $T/r)"
 probar "baja → 204" 204 "$(cod -X DELETE -H "$AU" $EC/$EID)"
 
+reiniciar_limites
+echo "Unidades de equipo"
+BASE_U='"nombre":"Lámpara LED","marcaModelo":"Gimmi LX-300","cicloMax":50,"costoHora":300'
+probar "alta con 2 unidades → 201" 201 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U,\"unidades\":[{\"numSerie\":\"lx300-1\",\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":3},{\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":0}]}")" $EC)"
+UEID=$(grep -oE '"id":"[^"]+"' $T/r | head -1 | cut -d'"' -f4)
+UID1=$(grep -oE '"unidades":\[\{"id":"[^"]+"' $T/r | cut -d'"' -f6)
+probar "claves EQ-003-01 y EQ-003-02 generadas" 2 "$(grep -oE '"clave":"EQ-003-0[12]"' $T/r | wc -l | tr -d ' ')"
+probar "serie en mayúsculas y numUnidades 2" 1 "$(grep -c '"numSerie":"LX300-1".*"numUnidades":2\|"numUnidades":2.*"numSerie":"LX300-1"' $T/r)"
+probar "serie repetida en la captura → 422 en su fila" 1 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U,\"unidades\":[{\"numSerie\":\"S-9\",\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":0},{\"numSerie\":\"s-9\",\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":0}]}")" $EC >/dev/null; grep -c '"field":"unidades\[1\].numSerie"' $T/r)"
+probar "fecha de alta futura → 422" 1 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U,\"unidades\":[{\"fechaAlta\":\"2099-01-01\",\"usosPrevios\":0}]}")" $EC >/dev/null; grep -c '"field":"unidades\[0\].fechaAlta"' $T/r)"
+probar "usos previos negativos → 422" 422 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U,\"unidades\":[{\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":-1}]}")" $EC)"
+probar "serie con ; → 422" 422 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U,\"unidades\":[{\"numSerie\":\"AB;1\",\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":0}]}")" $EC)"
+probar "serie de otra unidad activa → 422 en su fila" 1 "$(cod -H "$AU" -H "$J" --data-binary "$(cuerpo '{"nombre":"Atomico","marcaModelo":"X","cicloMax":50,"costoHora":1,"unidades":[{"numSerie":"LX300-1","fechaAlta":"2026-01-15","usosPrevios":0}]}')" $EC >/dev/null; grep -c '"field":"unidades\[0\].numSerie"' $T/r)"
+probar "atomicidad: ese equipo no quedó guardado" 0 "$(echo "SELECT COUNT(*) FROM EQUIPO WHERE NOMBRE = 'Atomico';" | sql | tail -2 | head -1 | tr -d ' ')"
+probar "editar: cambia serie, quita la -02 y agrega otra → 200" 200 "$(cod -X PUT -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U,\"unidades\":[{\"id\":\"$UID1\",\"numSerie\":\"LX300-1B\",\"fechaAlta\":\"2026-01-15\",\"usosPrevios\":4},{\"fechaAlta\":\"2026-01-20\",\"usosPrevios\":0}]}")" $EC/$UEID)"
+probar "la nueva sigue el consecutivo (EQ-003-03) y la -02 ya no está" "1 0" "$(grep -c '"clave":"EQ-003-03"' $T/r) $(grep -c '"clave":"EQ-003-02"' $T/r)"
+probar "la -01 conserva su clave con la serie nueva" 1 "$(grep -c "\"id\":\"$UID1\",\"clave\":\"EQ-003-01\",\"numSerie\":\"LX300-1B\"" $T/r)"
+probar "editar sin 'unidades' no las toca" 1 "$(cod -X PUT -H "$AU" -H "$J" --data-binary "$(cuerpo "{$BASE_U}")" $EC/$UEID >/dev/null; grep -c '"numUnidades":2' $T/r)"
+probar "el listado trae numUnidades" 1 "$(cod -H "$AU" "$EC?q=LX-300" >/dev/null; grep -c '"numUnidades":2' $T/r)"
+probar "baja del equipo → 204" 204 "$(cod -X DELETE -H "$AU" $EC/$UEID)"
+probar "sus unidades quedan de baja" 0 "$(echo "SELECT COUNT(*) FROM EQUIPO_UNIDAD WHERE ACTIVO = TRUE;" | sql | tail -2 | head -1 | tr -d ' ')"
+
 echo "Formatos de texto"
 probar "nombre de procedimiento con ; → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"Holep; DROP TABLE X"}' $P)"
 probar "nombre de técnico con llaves → 422" 422 "$(cod -H "$AU" -H "$J" -d '{"nombre":"{{x}}","puesto":"OTRO"}' $TC)"
@@ -225,6 +248,7 @@ probar "refresh tras logout → 401" 401 "$(curl -s -b $T/c -o /dev/null -w '%{h
 
 echo "Limpieza"
 printf 'DELETE FROM CONSECUTIVO;
+DELETE FROM EQUIPO_UNIDAD;
 DELETE FROM TARIFA_EQUIPO;
 DELETE FROM EQUIPO;
 DELETE FROM INSUMO;

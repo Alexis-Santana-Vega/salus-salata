@@ -1,4 +1,4 @@
-# 12 · Contexto para continuar en otra máquina (corte 2026-11-14)
+# 12 · Contexto para continuar (corte 2026-11-17: Fase 1 cerrada)
 
 Léelo completo al abrir una sesión nueva, junto con `CLAUDE.md`, `docs/06-plan-de-trabajo.md` y `docs/09-decisiones-tecnicas.md` (fuente de verdad técnica). La memoria de Claude de la otra máquina no viaja con el repo: todo lo importante está aquí.
 
@@ -14,8 +14,10 @@ Léelo completo al abrir una sesión nueva, junto con `CLAUDE.md`, `docs/06-plan
   - 1.5 Insumos + `CLAVE_CATALOGO`
   - 1.6 Equipo + tarifas con historial
   - Claves generadas por el sistema (hospital, insumo, equipo)
-- **Siguiente: 1.7 Unidades de equipo**; después **1.8 Cierre de la Fase 1** (ver §6).
-- Último estado: el usuario pidió "Revisar antes" de la 1.7 y no dejó observaciones. **Pregúntale al inicio si revisó y si hay ajustes** antes de construir la 1.7.
+  - 1.7 Unidades de equipo (EQ-001-01) en el alta y la edición del equipo
+  - 1.8 Cierre: catálogo real del Excel capturado en pruebas, integración 142/142
+- **Siguiente: Fase 2 · Programar cirugías + disponibilidad** (ver §6). Empezar con una sesión nueva.
+- **Primero, en la sesión nueva** (pendiente de la 1.7): recorrer en el navegador con `qa-admin` los casos U4 y U13 de `docs/11` y la revisión móvil de los catálogos. En la sesión anterior no se pudo iniciar sesión en el navegador (la contraseña de `qa-admin` está en `.env` y no se lee desde el chat): **pide al usuario que inicie sesión en el panel del navegador** y sigue.
 
 ## 2. Arranque en una máquina nueva
 
@@ -23,7 +25,7 @@ Léelo completo al abrir una sesión nueva, junto con `CLAUDE.md`, `docs/06-plan
 git clone <repo salus-salata> && cd salus-salata
 bash scripts/preparar.sh            # crea .env, .env.produccion y certificados (nuevos secretos)
 bash scripts/entorno.sh pruebas up  # la 1.ª vez carga el catálogo de direcciones (~11 s)
-bash scripts/entorno.sh pruebas probar   # integración: debe dar 126 correctas, 0 fallidas
+bash scripts/entorno.sh pruebas probar   # integración: debe dar 142 correctas, 0 fallidas
 bash scripts/usuarios-prueba.sh qa  # crea qa-admin para probar vistas (genera QA_ADMIN_PASSWORD en .env)
 ```
 
@@ -64,7 +66,7 @@ bash scripts/usuarios-prueba.sh qa  # crea qa-admin para probar vistas (genera Q
 - Roles: Sysadmin y Admin tienen acceso completo a catálogos; Doctor recibe 403.
 - Baja lógica (`ACTIVO`); `DELETE` responde 204.
 - **Claves generadas**:
-  - Tabla `CONSECUTIVO` con `repository.Siguiente(ctx, tx, nombre)` (`UPDATE … RETURNING` dentro de la transacción; sin huecos). Nombres: `HOSPITAL:<ABR>`, `INSUMO`, `EQUIPO` y, en la 1.7, `UNIDAD:<clave equipo>`.
+  - Tabla `CONSECUTIVO` con `repository.Siguiente(ctx, tx, nombre)` (`UPDATE … RETURNING` dentro de la transacción; sin huecos). Nombres: `HOSPITAL:<ABR>`, `INSUMO`, `EQUIPO` y `UNIDAD:<clave equipo>`.
   - El número interno del doctor usa la secuencia `SEQ_DOCTOR_NUMERO` (`DOC-0001`; puede tener huecos).
 - **`CLAVE_CATALOGO (CLAVE, TIPO)`**: equipo e insumo reservan ahí su clave (`EQUIPO`/`INSUMO`). No se libera con la baja.
 - **Direcciones**:
@@ -73,7 +75,8 @@ bash scripts/usuarios-prueba.sh qa  # crea qa-admin para probar vistas (genera Q
   - Se regenera con `go run ./cmd/catalogo-direcciones -inegi <AGEEML_utf8.csv> -sepomex <hojas.csv>`. Las hojas de SEPOMEX se exportan a CSV UTF-8 desde Excel. Los archivos fuente de INEGI y SEPOMEX **no** están en el repo.
   - Una dirección guarda calle, números y `ASENTAMIENTO_ID`. `GET /api/v1/codigos-postales/{cp}` devuelve las colonias.
 - **Tarifas de equipo**: nunca se sobrescriben. Un cambio de costo agrega fila vigente desde hoy; el mismo día corrige la de hoy. "Hoy" = `model.Hoy()` (America/Mexico_City).
-- Migraciones aplicadas: 0001–0015. **Una migración aplicada no se edita**: se crea otra.
+- **Unidades de equipo** (`EQUIPO_UNIDAD`): el `POST`/`PUT` de equipos manda la lista completa `unidades` (sin `id` = nueva, con `id` = se actualiza; las guardadas que falten se dan de baja; si el `PUT` omite `unidades`, no se tocan). Serie opcional, en mayúsculas, única entre activas. Fecha de alta no futura. La baja del equipo da de baja sus unidades. Todo en la transacción del equipo. Sin estado ni hospital actual todavía (Fase 2).
+- Migraciones aplicadas: 0001–0016. **Una migración aplicada no se edita**: se crea otra.
 
 ### Frontend (Vue 3 + Vuetify 4)
 - Piezas del patrón CRUD:
@@ -87,7 +90,7 @@ bash scripts/usuarios-prueba.sh qa  # crea qa-admin para probar vistas (genera Q
 - `router.onError` recarga la app si una pestaña vieja pide archivos de un build anterior (corrige el login atorado tras un despliegue).
 
 ### Pruebas
-- `scripts/prueba-integracion.sh` (126 casos):
+- `scripts/prueba-integracion.sh` (142 casos):
   - restablece al admin al empezar y parte de catálogos vacíos
   - reinicia el backend entre bloques para no chocar con el límite de 30 escrituras/min por IP
   - al terminar **borra todos los usuarios** (admin vuelve a la contraseña inicial y hay que recrear `qa-admin`)
@@ -105,39 +108,26 @@ Está en `docs/06-plan-de-trabajo.md` › Deuda técnica:
 
 Opcional: el usuario podría querer conservar los códigos del Excel de insumos (SON-3-18) como un campo aparte, no como clave.
 
-## 6. Cómo hacer la 1.7 Unidades de equipo (propuesta lista)
+## 6. Cómo empezar la Fase 2 · Programar cirugías + disponibilidad
 
-1. **Matriz primero** en `docs/11` (casos U1…). Debe cubrir:
-   - alta de equipo con unidades
-   - agregar unidades a un equipo existente
-   - claves `EQ-001-01`, `EQ-001-02`… generadas
-   - número de serie opcional y único
-   - fecha de alta (hoy por defecto, no futura)
-   - usos previos (entero ≥ 0)
-   - quitar una unidad en la captura antes de guardar
-   - baja lógica de una unidad
-   - listado de equipos con número de unidades
-2. **Migración** `0016_unidades.sql`, tabla `EQUIPO_UNIDAD`:
-   - columnas `ID`, `EQUIPO_ID` (FK), `CLAVE` (única), `NUM_SERIE` (única, nula), `FECHA_ALTA DATE`, `USOS_PREVIOS INTEGER >= 0`, `ACTIVO` y las fechas de creación y cambio
-   - **sin** estado ni hospital actual: llegan en la Fase 2
-3. **Servicio**: el alta y la edición del equipo guardan modelo, tarifa y unidades nuevas en **una** transacción. Cada clave sale de `Siguiente(ctx, tx, "UNIDAD:"+claveEquipo)` con formato `%s-%02d`.
-4. **API**:
-   - `POST /api/v1/equipos` acepta `unidades: [{numSerie, fechaAlta, usosPrevios}]`
-   - `GET /api/v1/equipos/{id}` devuelve `unidades`
-   - el listado agrega `numUnidades` (subconsulta COUNT)
-   - para agregar o dar de baja una unidad en un equipo existente: `POST /api/v1/equipos/{id}/unidades` y `DELETE /api/v1/equipos/{id}/unidades/{unidadId}`
-5. **Front**: sección "3 · Unidades" del mock `AltaEquipo`.
-   - Lista editable con botón "Agregar unidad": serie, fecha de alta, usos previos y quitar.
-   - La clave se muestra con `CampoGenerado` en las ya guardadas.
-   - "Escanear series" es de la Fase 8.
-6. Integración, recorrido de la matriz, docs (06 ✅, 09 si hay decisión nueva, OpenAPI), commit y push.
+Alcance y criterio en `docs/06-plan-de-trabajo.md` › Fase 2. Antes de construir:
 
-Luego, **1.8 Cierre de la Fase 1**:
-- captura real del catálogo del Excel en pruebas
-- revisión móvil de todo
-- `prueba-integracion.sh` y `prueba-seguridad.sh`
-- docs al día
-- preguntar al usuario si quiere desplegar a producción (con `respaldar` antes)
+1. **Recorrido pendiente de la 1.7** (U4, U13 y móvil), con el usuario conectado en el panel del navegador.
+2. **Dividir la Fase 2 en pasos cortos** (2.1, 2.2…) en `docs/06`, como se hizo con la Fase 1, y presentárselos al usuario con las tablas, el flujo y los roles. Esperar su visto bueno.
+3. Preguntas abiertas que salen de los docs (confírmalas con el usuario, no las inventes):
+   - Regla de redondeo de horas en la cotización (fracciones de hora).
+   - Folio `CIR-###-AA`: consecutivo por año (sugerencia: `CONSECUTIVO` con nombre `CIRUGIA:<AA>`).
+   - Deuda técnica de la Fase 2: duración típica del procedimiento (precarga el horario) y hospitales donde opera el doctor.
+   - La baja de una unidad o de un equipo con reservas futuras debe bloquearse (decisión en `docs/09` › Unidades de equipo).
+4. Cada paso: matriz en `docs/11` antes de construir, migración nueva (la siguiente es `0017`), transacciones con `enTx`, integración y recorrido en vista.
+
+### Datos capturados del Excel en pruebas (1.8)
+Desde `docs/Registro_Cirugias_Semaforo_Completo_V4_V2.xlsx`, por la API como `qa-admin`:
+- Procedimientos: Cirugía General, Artroscopia / Morcelación, Traumatología.
+- Equipos EQ-001 a EQ-006 (Torre de Laparoscopia Gimmi, Electrocirugía Geniux, Electrocirugía Erbe VIO3, Morcelador Quirúrgico Simai, Láser Lumenis 120W, Láser Quanta 100W), cada uno con una unidad y sus usos previos del Excel. **Costo por hora en 0**: el Excel no trae precios.
+- Insumos INS-0001 a INS-0008 con el stock del Excel. **Precio en 0** por la misma razón.
+- No capturado: instrumental, varillas y fibra como accesorios (Fase 9, kits); doctores (la hoja viene vacía); el hospital de ejemplo (Hospital Ángeles, León, Gto.) porque Guanajuato no está en el catálogo de direcciones (solo Hidalgo y vecinos). Pregunta al usuario si hay que agregar Guanajuato.
+- `prueba-integracion.sh` borra los catálogos al terminar: si se corre, la captura se pierde (se repite con la API o a mano).
 
 ## 7. Al cerrar cada sesión
 `bash scripts/entorno.sh pruebas down`, detener `pnpm dev` si se usó, actualizar este archivo si cambió el estado, commit y push.

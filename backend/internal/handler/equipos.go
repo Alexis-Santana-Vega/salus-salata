@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v3"
 
+	"salus/backend/internal/model"
 	"salus/backend/internal/response"
 	"salus/backend/internal/service"
 )
@@ -10,17 +13,34 @@ import (
 type EquiposHandler struct{ Svc *service.Equipos }
 
 type equipoReq struct {
-	Nombre        string   `json:"nombre" validate:"required,max=120,textogeneral"`
-	MarcaModelo   string   `json:"marcaModelo" validate:"required,max=120,textogeneral"`
-	CicloMax      *int     `json:"cicloMax" validate:"required,gte=1,lte=100000"`
-	RequierePurga bool     `json:"requierePurga"`
-	PurgaCada     *int     `json:"purgaCada" validate:"required_if=RequierePurga true,omitempty,gte=1,lte=100000"`
-	CostoHora     *float64 `json:"costoHora" validate:"required,gte=0,lte=9999999999,dosdecimales"`
+	Nombre        string      `json:"nombre" validate:"required,max=120,textogeneral"`
+	MarcaModelo   string      `json:"marcaModelo" validate:"required,max=120,textogeneral"`
+	CicloMax      *int        `json:"cicloMax" validate:"required,gte=1,lte=100000"`
+	RequierePurga bool        `json:"requierePurga"`
+	PurgaCada     *int        `json:"purgaCada" validate:"required_if=RequierePurga true,omitempty,gte=1,lte=100000"`
+	CostoHora     *float64    `json:"costoHora" validate:"required,gte=0,lte=9999999999,dosdecimales"`
+	Unidades      []unidadReq `json:"unidades" validate:"max=200,dive"`
+}
+
+// Sin id es una unidad nueva; con id, una ya guardada del equipo.
+type unidadReq struct {
+	ID          *model.ID `json:"id"`
+	NumSerie    string    `json:"numSerie" validate:"omitempty,max=60,serie"`
+	FechaAlta   string    `json:"fechaAlta" validate:"required,datetime=2006-01-02"`
+	UsosPrevios *int      `json:"usosPrevios" validate:"required,gte=0,lte=100000"`
 }
 
 func (r equipoReq) datos() service.DatosEquipo {
-	return service.DatosEquipo{Nombre: r.Nombre, MarcaModelo: r.MarcaModelo, CicloMax: *r.CicloMax,
+	d := service.DatosEquipo{Nombre: r.Nombre, MarcaModelo: r.MarcaModelo, CicloMax: *r.CicloMax,
 		RequierePurga: r.RequierePurga, PurgaCada: r.PurgaCada, CostoHora: *r.CostoHora}
+	if r.Unidades != nil {
+		d.Unidades = make([]service.DatosUnidad, len(r.Unidades))
+		for i, u := range r.Unidades {
+			alta, _ := time.Parse("2006-01-02", u.FechaAlta) // ya validada
+			d.Unidades[i] = service.DatosUnidad{ID: u.ID, NumSerie: u.NumSerie, FechaAlta: alta, UsosPrevios: *u.UsosPrevios}
+		}
+	}
+	return d
 }
 
 // Listar: GET /api/v1/equipos?page=&pageSize=&q=&sort=

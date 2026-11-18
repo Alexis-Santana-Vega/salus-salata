@@ -139,3 +139,23 @@ Claves generadas (2026-11-14): el usuario ya no teclea claves de hospital ni de 
 | E12 | Buscar por clave, nombre o marca | Lo encuentra | ✔ |
 
 Recorrido 2026-11-14 (web, qa-admin): E1–E12 ✔ (E3, E8, E10 con varias tarifas y E12 por API). Claves generadas verificadas en vista: el alta de hospital e insumo ya no pide clave y la edición la muestra de solo lectura.
+
+## 1.7 Unidades de equipo
+
+| # | Caso | Esperado | Resultado |
+|---|---|---|---|
+| U1 | Alta de equipo con 3 unidades | Claves EQ-00N-01, -02, -03 generadas; el chip dice "3 unidades" | ✔ API |
+| U2 | Alta sin unidades | Se guarda (las unidades se agregan después) | ✔ API |
+| U3 | Agregar unidades a un equipo existente | Siguen el consecutivo del equipo (-04, -05…), nunca se repite una clave | ✔ API |
+| U4 | Quitar una fila nueva antes de guardar | No se guarda ni consume clave | |
+| U5 | Número de serie vacío | Se guarda sin serie | ✔ API |
+| U6 | Serie repetida (en la misma captura o con otra unidad activa) | Error en la Serie de esa fila; no se guarda nada | ✔ API |
+| U7 | Fecha de alta: hoy por defecto; una fecha futura | Error en la fecha | ✔ API |
+| U8 | Usos previos negativos, con decimales o vacíos | Error en el campo | ✔ API |
+| U9 | Editar la serie o los usos de una unidad guardada | Se actualiza; su clave no cambia | ✔ API |
+| U10 | Quitar una unidad guardada y guardar | Baja lógica: deja de verse y su clave no se reutiliza | ✔ API |
+| U11 | Listado de equipos | Columna Unidades con el número de unidades activas | ✔ API |
+| U12 | Error en una unidad al guardar | Ni el modelo ni las demás unidades se guardan (atomicidad) | ✔ API |
+| U13 | Móvil | Las filas de unidad se apilan sin scroll horizontal | |
+
+Recorrido 2026-11-17 (API, `prueba-integracion.sh`, 142/142): U1–U3, U5–U12 ✔. U4 y U13 (vista y móvil) quedan para recorrer en el navegador con `qa-admin` al iniciar la siguiente sesión: en esta no se pudo iniciar sesión en el navegador.

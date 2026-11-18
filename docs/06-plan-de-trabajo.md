@@ -45,8 +45,8 @@ Cada paso se entrega y se revisa antes de seguir.
 | **1.4 Hospitales + contactos** ✅ | Clave con prefijo del estado de su colonia, dirección obligatoria del catálogo, coordenadas y liga https, contactos en la misma transacción | Matriz H1–H13 en `docs/11` |
 | **1.5 Insumos + `CLAVE_CATALOGO`** ✅ | Clave reservada en `CLAVE_CATALOGO` (se corrige en cascada, no se reusa tras la baja), código de barras único, precio con 2 decimales, stock ≥ 0, chip "Bajo mínimo" | Matriz I1–I12 en `docs/11` |
 | **1.6 Equipo + tarifa** ✅ | Modelo con clave generada (EQ-001), purga opcional, tarifa con vigencia e historial; claves de hospital e insumo también generadas | Matriz E1–E12 en `docs/11` |
-| 1.7 Unidades de equipo | Unidades en el alta y en un equipo existente, clave `EQ-001-01` automática | — |
-| 1.8 Cierre | Captura real del Excel en pruebas, revisión móvil, pruebas y docs | Criterio de la fase |
+| **1.7 Unidades de equipo** ✅ | Unidades en el alta y en la edición del equipo (misma transacción), clave `EQ-001-01` automática, serie opcional y única entre activas, fecha de alta no futura, usos previos ≥ 0 | Matriz U1–U13 en `docs/11` |
+| **1.8 Cierre** ✅ | Catálogo real del Excel capturado en pruebas (3 procedimientos, 6 equipos con su unidad, 8 insumos), integración 142/142, docs al día | Criterio de la fase; pendiente: recorrido en vista de U4/U13 y revisión móvil con sesión iniciada |
 
 **Deuda técnica (campos del mock que no entran en la Fase 1):**
 

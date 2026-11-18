@@ -1,6 +1,6 @@
 <!--
-  Alta y edición de equipo (mock: AltaEquipo, secciones 1 y 2). Unidades: paso
-  1.7. Proveedor: Fase 7. Accesorios: Fase 9. Notas: Fase 4.
+  Alta y edición de equipo con sus unidades (mock: AltaEquipo, secciones 1 a 3).
+  Escanear series: Fase 8. Proveedor: Fase 7. Accesorios: Fase 9. Notas: Fase 4.
 -->
 <template>
   <error-pagina v-if="noEncontrado" codigo="404" />
@@ -99,6 +99,66 @@
       </v-expand-transition>
     </seccion-formulario>
 
+    <seccion-formulario
+      :ayuda="esEdicion
+        ? 'La clave de cada unidad se genera al guardar. Quitar una unidad guardada la da de baja al guardar los cambios.'
+        : 'Ej. 3 lámparas iguales = 1 modelo con 3 unidades. La clave de cada unidad se genera al guardar.'"
+      titulo="3 · Unidades"
+    >
+      <template #extra>
+        <v-chip color="primary" :text="unidades(datos.unidades.length)" />
+      </template>
+
+      <template v-for="(u, i) in datos.unidades" :key="u.id ?? `nueva-${u.clave}-${i}`">
+        <v-col cols="12" md="2">
+          <campo-generado label="Unidad" :valor="u.clave || 'Al guardar'" />
+        </v-col>
+
+        <v-col cols="12" md="4">
+          <v-text-field
+            v-model="u.numSerie"
+            :error-messages="errores[`unidades[${i}].numSerie`]"
+            label="Número de serie"
+            maxlength="60"
+            :rules="[maximo(60), serie]"
+            @update:model-value="limpiarError(`unidades[${i}].numSerie`)"
+          />
+        </v-col>
+
+        <v-col cols="6" md="3">
+          <v-text-field
+            v-model="u.fechaAlta"
+            :error-messages="errores[`unidades[${i}].fechaAlta`]"
+            label="Fecha de alta *"
+            :max="hoy"
+            :rules="[requerido, fechaNoFutura(hoy)]"
+            type="date"
+            @update:model-value="limpiarError(`unidades[${i}].fechaAlta`)"
+          />
+        </v-col>
+
+        <v-col cols="4" md="2">
+          <v-text-field
+            v-model="u.usosPrevios"
+            :error-messages="errores[`unidades[${i}].usosPrevios`]"
+            inputmode="numeric"
+            label="Usos previos *"
+            maxlength="6"
+            :rules="[requerido, enteroPositivo]"
+            @update:model-value="limpiarError(`unidades[${i}].usosPrevios`)"
+          />
+        </v-col>
+
+        <v-col cols="2" md="1">
+          <btn-icono :aria-label="`Quitar unidad ${u.clave || i + 1}`" icon="$eliminar" @click="datos.unidades.splice(i, 1)" />
+        </v-col>
+      </template>
+
+      <v-col cols="12">
+        <v-btn :disabled="datos.unidades.length >= 200" prepend-icon="$agregar" @click="agregarUnidad">Agregar unidad</v-btn>
+      </v-col>
+    </seccion-formulario>
+
     <seccion-formulario v-if="esEdicion" ayuda="Las tarifas no se sobrescriben: cada cambio de costo queda aquí." titulo="Historial de tarifas">
       <v-col cols="12">
         <v-table>
@@ -142,9 +202,9 @@
   import SeccionFormulario from '@/components/SeccionFormulario.vue'
   import { useBaja } from '@/composables/useBaja'
   import { useFormulario } from '@/composables/useFormulario'
-  import { aEnvio, equipos } from '@/services/equipos'
-  import { fecha, moneda } from '@/utils/formato'
-  import { dinero, enteroMayorACero, maximo, requerido, textoGeneral } from '@/utils/rules'
+  import { aEnvio, type DatosUnidad, equipos } from '@/services/equipos'
+  import { fecha, hoyISO, moneda, unidades } from '@/utils/formato'
+  import { dinero, enteroMayorACero, enteroPositivo, fechaNoFutura, maximo, requerido, serie, textoGeneral } from '@/utils/rules'
 
   const route = useRoute()
   const router = useRouter()
@@ -154,11 +214,12 @@
   const { datos, errores, error, cargando, guardando, noEncontrado, esEdicion, guardar, limpiarError }
     = useFormulario(equipos, {
       id,
-      vacio: () => ({ clave: '', nombre: '', marcaModelo: '', cicloMax: '50', requierePurga: false, purgaCada: '5', costoHora: '', tarifas: [] }),
+      vacio: () => ({ clave: '', nombre: '', marcaModelo: '', cicloMax: '50', requierePurga: false, purgaCada: '5', costoHora: '', tarifas: [], unidades: [] }),
       desde: e => ({
         clave: e.clave, nombre: e.nombre, marcaModelo: e.marcaModelo, cicloMax: String(e.cicloMax),
         requierePurga: e.requierePurga, purgaCada: e.purgaCada == null ? '5' : String(e.purgaCada),
         costoHora: String(e.costoHora), tarifas: e.tarifas,
+        unidades: e.unidades.map((u): DatosUnidad => ({ ...u, usosPrevios: String(u.usosPrevios) })),
       }),
       enviar: aEnvio,
       mensajes: { creado: 'Equipo dado de alta', actualizado: 'Equipo actualizado' },
@@ -171,6 +232,12 @@
   // En móvil la baja se hace desde aquí (la lista solo abre la edición).
   const { abierto: bajaAbierta, eliminando, pedir: pedirBaja, confirmar: confirmarBaja }
     = useBaja<{ id: string }>(equipos.eliminar, 'Equipo eliminado', volver)
+
+  const hoy = hoyISO()
+
+  function agregarUnidad () {
+    datos.unidades.push({ clave: '', numSerie: '', fechaAlta: hoy, usosPrevios: '0' })
+  }
 
   function volver () {
     router.push('/equipos')

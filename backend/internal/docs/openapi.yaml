@@ -595,6 +595,18 @@ components:
               requierePurga: { type: boolean }
               purgaCada: { type: [integer, "null"], minimum: 1, description: "Obligatorio si requierePurga" }
               costoHora: { type: number, minimum: 0, multipleOf: 0.01, description: "Si cambia, se agrega una tarifa vigente desde hoy" }
+              unidades:
+                type: array
+                maxItems: 200
+                description: "Estado completo de las unidades. Sin id se crea (clave EQ-001-01 generada); con id se actualiza; en la edición, las guardadas que falten se dan de baja. Si se omite en la edición, no se tocan."
+                items:
+                  type: object
+                  required: [fechaAlta, usosPrevios]
+                  properties:
+                    id: { type: string, format: uuid }
+                    numSerie: { type: string, maxLength: 60, description: "Opcional; única entre unidades activas" }
+                    fechaAlta: { type: string, format: date, description: "No futura" }
+                    usosPrevios: { type: integer, minimum: 0 }
     Insumo:
       required: true
       content:
@@ -663,6 +675,14 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Unidad:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        clave: { type: string, readOnly: true, example: EQ-001-01 }
+        numSerie: { type: string }
+        fechaAlta: { type: string, format: date }
+        usosPrevios: { type: integer }
     Tarifa:
       type: object
       properties:
@@ -680,6 +700,8 @@ components:
         purgaCada: { type: [integer, "null"] }
         costoHora: { type: number, description: Tarifa vigente hoy }
         tarifas: { type: array, items: { $ref: "#/components/schemas/Tarifa" }, description: "Historial (solo en el detalle)" }
+        numUnidades: { type: integer, description: Unidades activas }
+        unidades: { type: array, items: { $ref: "#/components/schemas/Unidad" }, description: "Activas, por clave (solo en el detalle)" }
         creadoEn: { type: string, format: date-time }
         actualizadoEn: { type: string, format: date-time }
     Insumo:

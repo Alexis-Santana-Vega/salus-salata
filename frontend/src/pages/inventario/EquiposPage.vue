@@ -1,6 +1,6 @@
 <!--
-  Equipos (modelos maestros). En la Fase 1 es el listado; unidades llegan en el
-  paso 1.7 y estado, ciclo y mantenimiento en la Fase 4 (mock: Equipo).
+  Equipos (modelos maestros) con su número de unidades. Estado, ciclo y
+  mantenimiento por unidad: Fase 4 (mock: Equipo).
 -->
 <template>
   <page-header subtitulo="Equipo reutilizable que se renta por hora." titulo="Equipos">
@@ -25,7 +25,7 @@
         :listo="listo"
         :nuevo="{ texto: 'Nuevo equipo', to: '/equipos/alta' }"
         placeholder="Buscar por clave, nombre o marca"
-        :subtitulo="e => `${e.clave} · ${e.marcaModelo} · ${moneda(e.costoHora)} por hora`"
+        :subtitulo="e => `${e.clave} · ${e.marcaModelo} · ${moneda(e.costoHora)} por hora · ${unidades(e.numUnidades)}`"
         texto-vacio="Da de alta los modelos de equipo que se rentan (torres, láseres, morceladores…)."
         titulo-vacio="Aún no hay equipos"
         :total="total"
@@ -34,6 +34,7 @@
         @reintentar="cargar"
       >
         <template #[`item.costoHora`]="{ item }">{{ moneda(item.costoHora) }}</template>
+        <template #[`item.numUnidades`]="{ item }">{{ entero(item.numUnidades) }}</template>
         <template #[`item.cicloMax`]="{ item }">{{ entero(item.cicloMax) }} usos</template>
         <template #[`item.purga`]="{ item }">{{ item.requierePurga ? `Cada ${item.purgaCada} usos` : 'No requiere' }}</template>
       </listado-crud>
@@ -59,7 +60,7 @@
   import { useBaja } from '@/composables/useBaja'
   import { useListado } from '@/composables/useListado'
   import { type Equipo, equipos } from '@/services/equipos'
-  import { entero, moneda } from '@/utils/formato'
+  import { entero, moneda, unidades } from '@/utils/formato'
 
   const router = useRouter()
   const { mobile } = useDisplay()
@@ -73,6 +74,7 @@
     { key: 'nombre', title: 'Nombre', sortable: true },
     { key: 'marcaModelo', title: 'Marca / modelo', sortable: true },
     { key: 'costoHora', title: 'Costo por hora', sortable: false, align: 'end' },
+    { key: 'numUnidades', title: 'Unidades', sortable: false, align: 'end' },
     { key: 'cicloMax', title: 'Ciclo', sortable: true, align: 'end' },
     { key: 'purga', title: 'Purga', sortable: false },
   ]

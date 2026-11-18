@@ -28,6 +28,8 @@ var (
 	reTelefono = regexp.MustCompile(`^\+?[0-9][0-9 ()-]{6,19}$`)
 	// Código postal: exactamente 5 dígitos.
 	reCP = regexp.MustCompile(`^[0-9]{5}$`)
+	// Número de serie: letras sin acento, números y . / - (p. ej. "LX300-88412").
+	reSerie = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9./-]*$`)
 )
 
 // reglas: etiqueta → expresión y mensaje para el usuario.
@@ -41,6 +43,7 @@ var reglas = map[string]struct {
 	"codigo":       {reCodigo, "Usa solo letras sin acento, números y guion"},
 	"telefono":     {reTelefono, "Escribe un teléfono válido (solo números, espacios, guiones o +)"},
 	"cp":           {reCP, "El código postal tiene 5 dígitos"},
+	"serie":        {reSerie, "Usa solo letras sin acento, números y . / -"},
 }
 
 func nuevoValidador() *validator.Validate {

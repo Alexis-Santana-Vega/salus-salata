@@ -115,3 +115,14 @@ export const enteroMayorACero: Regla = v => {
   const t = texto(v).trim()
   return t === '' || (/^\d{1,6}$/.test(t) && Number(t) >= 1 && Number(t) <= 100_000) || 'Escribe un número entero de 1 a 100,000'
 }
+
+// Número de serie opcional: letras sin acento, números y . / - (misma regla del back).
+export const serie = formato(/^[A-Z0-9][A-Z0-9./-]*$/i, 'Usa solo letras sin acento, números y . / -')
+
+// Fecha "AAAA-MM-DD" que no sea posterior a hoy (las ISO se comparan como texto).
+export function fechaNoFutura (hoy: string): Regla {
+  return v => {
+    const t = texto(v).trim()
+    return t === '' || (/^\d{4}-\d{2}-\d{2}$/.test(t) && t <= hoy) || 'La fecha no puede ser futura'
+  }
+}
